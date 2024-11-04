@@ -9,30 +9,51 @@
 
     <com.yandex.mapkit.mapview.MapView
         android:id="@+id/mapview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <include
         android:id="@+id/mapkit_version"
-        layout="@layout/mapkit_version_layout"/>
+        layout="@layout/mapkit_version_layout"
+        app:layout_constraintTop_toBottomOf="@id/mapview"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <EditText
         android:id="@+id/searchEditText"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:hint="Введите адрес" />
+        android:layout_marginTop="32dp"
+        android:hint="@string/hint_enter_address"
+        android:inputType="text"
+        android:autofillHints="address"
+        android:textColor="#000000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="16dp"/>
 
     <Button
         android:id="@+id/searchButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/searchEditText"
-        android:text="Поиск" />
+        android:text="@string/text_search"
+        app:layout_constraintTop_toBottomOf="@id/searchEditText"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/routeButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/searchButton"
-        android:text="Построить маршрут" />
+        android:text="@string/text_build_route"
+        app:layout_constraintTop_toBottomOf="@id/searchEditText"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
