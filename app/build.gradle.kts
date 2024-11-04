@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ronik.geotraveljournal"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -35,7 +35,7 @@ android {
 }
 
 dependencies {
-    implementation("com.yandex.android:maps.mobile:4.5.1-lite")
+    implementation("com.yandex.android:maps.mobile:4.8.1-full")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
