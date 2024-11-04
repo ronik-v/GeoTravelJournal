@@ -18,8 +18,8 @@ import com.yandex.mapkit.search.SearchManager
 import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.search.SearchOptions
 import com.yandex.mapkit.directions.driving.DrivingOptions
-import com.yandex.mapkit.directions.driving.DrivingRouter
 import com.yandex.mapkit.directions.driving.DrivingRoute
+import com.yandex.mapkit.directions.driving.DrivingRouter
 import com.yandex.mapkit.directions.driving.DrivingRouterType
 import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var searchButton: Button
     private lateinit var routeButton: Button
+    private var currentRoute: DrivingSession.DrivingRouteListener? = null
 
     private val placemarkTapListener = MapObjectTapListener { _, point ->
         Toast.makeText(this, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
@@ -57,7 +58,11 @@ class MainActivity : AppCompatActivity() {
 
         searchButton.setOnClickListener {
             val query = searchEditText.text.toString()
-            searchLocation(query)
+            if (query.isNotEmpty()) {
+                searchLocation(query)
+            } else {
+                Toast.makeText(this, "Введите адрес для поиска", Toast.LENGTH_SHORT).show()
+            }
         }
 
         routeButton.setOnClickListener {
@@ -95,6 +100,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildRouteTo(destination: Point) {
+        mapView.map.mapObjects.clear()
         val userLocation = getCurrentLocation()
         val requestPoints = listOf(
             RequestPoint(userLocation, RequestPointType.WAYPOINT, null, null),
@@ -102,20 +108,18 @@ class MainActivity : AppCompatActivity() {
         )
 
         val vehicleOptions = VehicleOptions()
-        drivingRouter.requestRoutes(
-            requestPoints, DrivingOptions(), vehicleOptions,
-            object : DrivingSession.DrivingRouteListener {
-                override fun onDrivingRoutes(routes: List<DrivingRoute>) {
-                    if (routes.isNotEmpty()) {
-                        mapView.map.mapObjects.addPolyline(routes[0].geometry)
-                    }
-                }
-
-                override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
-                    Toast.makeText(this@MainActivity, "Ошибка маршрута", Toast.LENGTH_SHORT).show()
+        currentRoute = object : DrivingSession.DrivingRouteListener {
+            override fun onDrivingRoutes(routes: List<DrivingRoute>) {
+                if (routes.isNotEmpty()) {
+                    mapView.map.mapObjects.addPolyline(routes[0].geometry)
                 }
             }
-        )
+
+            override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
+                Toast.makeText(this@MainActivity, "Ошибка маршрута", Toast.LENGTH_SHORT).show()
+            }
+        }
+        drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, currentRoute!!)
     }
 
     private fun getCurrentLocation(): Point {
