@@ -1,15 +1,23 @@
 package com.ronik.geotraveljournal
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.directions.DirectionsFactory
-import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.directions.driving.DrivingOptions
+import com.yandex.mapkit.directions.driving.DrivingRoute
+import com.yandex.mapkit.directions.driving.DrivingRouter
+import com.yandex.mapkit.directions.driving.DrivingRouterType
+import com.yandex.mapkit.directions.driving.DrivingSession
+import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
@@ -17,14 +25,9 @@ import com.yandex.mapkit.search.SearchFactory
 import com.yandex.mapkit.search.SearchManager
 import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.search.SearchOptions
-import com.yandex.mapkit.directions.driving.DrivingOptions
-import com.yandex.mapkit.directions.driving.DrivingRoute
-import com.yandex.mapkit.directions.driving.DrivingRouter
-import com.yandex.mapkit.directions.driving.DrivingRouterType
-import com.yandex.mapkit.directions.driving.DrivingSession
-import com.yandex.mapkit.directions.driving.VehicleOptions
-import com.yandex.mapkit.map.VisibleRegionUtils
 import com.yandex.mapkit.search.Response
+import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.map.VisibleRegionUtils
 import com.yandex.mapkit.search.SearchManagerType
 import com.yandex.runtime.image.ImageProvider
 
@@ -35,7 +38,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var searchButton: Button
     private lateinit var routeButton: Button
+    private lateinit var location: Location
+
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1
 
     private val placemarkTapListener = MapObjectTapListener { _, point ->
         Toast.makeText(this, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
@@ -53,8 +59,14 @@ class MainActivity : AppCompatActivity() {
         searchButton = findViewById(R.id.searchButton)
         routeButton = findViewById(R.id.routeButton)
 
+        location = Location(this)
         searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
         drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+        }
 
         searchButton.setOnClickListener {
             val query = searchEditText.text.toString()
@@ -66,18 +78,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         routeButton.setOnClickListener {
-            val destination = Point(56.331590, 36.728727)
-            buildRouteTo(destination)
+            location.current { coordinates ->
+                buildRouteTo(coordinates)
+            }
         }
 
         val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
         val geoPointer = mapView.map.mapObjects.addPlacemark().apply {
-            geometry = Point(56.331590, 36.728727)
+            location.current { coordinates ->
+                geometry = coordinates
+            }
             setIcon(imageProvider)
         }
         geoPointer.addTapListener(placemarkTapListener)
 
-        mapView.map.move(CameraPosition(Point(56.331590, 36.728727), 17.0f, 150.0f, 30.0f))
+        location.current { coordinates ->
+            mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
+        }
     }
 
     private fun searchLocation(query: String) {
@@ -101,29 +118,40 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildRouteTo(destination: Point) {
         mapView.map.mapObjects.clear()
-        val userLocation = getCurrentLocation()
-        val requestPoints = listOf(
-            RequestPoint(userLocation, RequestPointType.WAYPOINT, null, null),
-            RequestPoint(destination, RequestPointType.WAYPOINT, null, null)
-        )
 
-        val vehicleOptions = VehicleOptions()
-        currentRoute = object : DrivingSession.DrivingRouteListener {
-            override fun onDrivingRoutes(routes: List<DrivingRoute>) {
-                if (routes.isNotEmpty()) {
-                    mapView.map.mapObjects.addPolyline(routes[0].geometry)
+        location.current { userLocation ->
+            val requestPoints = listOf(
+                RequestPoint(userLocation, RequestPointType.WAYPOINT, null, null),
+                RequestPoint(destination, RequestPointType.WAYPOINT, null, null)
+            )
+
+            val vehicleOptions = VehicleOptions()
+            currentRoute = object : DrivingSession.DrivingRouteListener {
+                override fun onDrivingRoutes(routes: List<DrivingRoute>) {
+                    if (routes.isNotEmpty()) {
+                        mapView.map.mapObjects.addPolyline(routes[0].geometry)
+                    }
+
+                    mapView.map.move(CameraPosition(userLocation, 17.0f, 150.0f, 30.0f))
+                }
+
+                override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
+                    Toast.makeText(this@MainActivity, "Ошибка маршрута", Toast.LENGTH_SHORT).show()
                 }
             }
-
-            override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
-                Toast.makeText(this@MainActivity, "Ошибка маршрута", Toast.LENGTH_SHORT).show()
-            }
+            drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, currentRoute!!)
         }
-        drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, currentRoute!!)
     }
 
-    private fun getCurrentLocation(): Point {
-        return Point(56.331590, 36.728727)
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Разрешение на доступ к местоположению предоставлено", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Необходимо предоставить разрешение на доступ к местоположению", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onStart() {
