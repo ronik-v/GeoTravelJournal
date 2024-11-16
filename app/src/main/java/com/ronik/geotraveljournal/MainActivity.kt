@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
@@ -24,7 +25,9 @@ import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.map.MapObjectTapListener
+import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.search.Response
 import com.yandex.mapkit.search.SearchFactory
@@ -46,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchIcon: ImageButton
     private lateinit var location: Location
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
+    private var userPlacemark: PlacemarkMapObject? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private val placemarkTapListener = MapObjectTapListener { _, point ->
         Toast.makeText(this, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
@@ -130,10 +134,27 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun moveToUserLocation(userLocation: Point) {
+        if (userPlacemark == null) {
+            userPlacemark = mapView.map.mapObjects.addPlacemark(userLocation).apply {
+                setIcon(ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin))
+            }
+        } else {
+            userPlacemark?.geometry = userLocation
+        }
+
+        mapView.map.move(
+            CameraPosition(userLocation, 17.0f, 0.0f, 0.0f),
+            Animation(Animation.Type.SMOOTH, 1.5f)
+        ) { Log.d("CameraMove", "Camera finished moving to user location") }
+    }
+
     private fun buildRouteTo(destination: Point) {
         mapView.map.mapObjects.clear()
 
         location.current { userLocation ->
+            moveToUserLocation(userLocation)
+
             val requestPoints = listOf(
                 RequestPoint(userLocation, RequestPointType.WAYPOINT, null, null),
                 RequestPoint(destination, RequestPointType.WAYPOINT, null, null)
@@ -145,12 +166,10 @@ class MainActivity : AppCompatActivity() {
                     if (routes.isNotEmpty()) {
                         mapView.map.mapObjects.addPolyline(routes[0].geometry)
                     }
-
-                    mapView.map.move(CameraPosition(userLocation, 17.0f, 150.0f, 30.0f))
                 }
 
                 override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
-                    Toast.makeText(this@MainActivity, "Ошибка маршрута", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Ошибка построения маршрута", Toast.LENGTH_SHORT).show()
                 }
             }
             drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, currentRoute!!)
