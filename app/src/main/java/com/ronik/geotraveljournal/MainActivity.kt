@@ -179,4 +179,10 @@ class MainActivity : AppCompatActivity() {
         MapKitFactory.getInstance().onStop()
         super.onStop()
     }
+
+    override fun onResume() {
+        super.onResume()
+        MapKitFactory.getInstance().onStart()
+        mapView.onStart()
+    }
 }
