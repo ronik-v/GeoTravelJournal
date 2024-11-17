@@ -25,9 +25,9 @@ import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
+import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.search.Response
 import com.yandex.mapkit.search.SearchFactory
@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var searchButton: Button
     private lateinit var routeButton: Button
+    private lateinit var resetRouteButton: Button
     private lateinit var searchIcon: ImageButton
     private lateinit var location: Location
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
         true
     }
+    private val routeObjects = mutableListOf<PolylineMapObject>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         searchButton = findViewById(R.id.searchButton)
         routeButton = findViewById(R.id.routeButton)
         searchIcon = findViewById(R.id.searchIcon)
+        resetRouteButton = findViewById(R.id.resetRouteButton)
 
         searchContainer.visibility = View.GONE
 
@@ -99,6 +102,10 @@ class MainActivity : AppCompatActivity() {
             location.current { coordinates ->
                 buildRouteTo(coordinates)
             }
+        }
+
+        resetRouteButton.setOnClickListener {
+            resetRoute()
         }
 
         val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
@@ -150,7 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildRouteTo(destination: Point) {
-        mapView.map.mapObjects.clear()
+        resetRoute()
 
         location.current { userLocation ->
             moveToUserLocation(userLocation)
@@ -161,18 +168,39 @@ class MainActivity : AppCompatActivity() {
             )
 
             val vehicleOptions = VehicleOptions()
-            currentRoute = object : DrivingSession.DrivingRouteListener {
+
+            val drivingRouteListener = object : DrivingSession.DrivingRouteListener {
                 override fun onDrivingRoutes(routes: List<DrivingRoute>) {
                     if (routes.isNotEmpty()) {
-                        mapView.map.mapObjects.addPolyline(routes[0].geometry)
+                        val routePolyline = mapView.map.mapObjects.addPolyline(routes[0].geometry)
+                        routeObjects.add(routePolyline)
+                    } else {
+                        Toast.makeText(this@MainActivity, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
-                    Toast.makeText(this@MainActivity, "Ошибка построения маршрута", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Ошибка построения маршрута: $error", Toast.LENGTH_SHORT).show()
                 }
             }
-            drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, currentRoute!!)
+
+            drivingRouter.requestRoutes(requestPoints, DrivingOptions(), vehicleOptions, drivingRouteListener)
+        }
+    }
+
+    private fun resetRoute() {
+        routeObjects.forEach { route ->
+            if (route.isValid) {
+                mapView.map.mapObjects.remove(route)
+            }
+        }
+        routeObjects.clear()
+        currentRoute = null
+        userPlacemark?.let {
+            if (it.isValid) {
+                mapView.map.mapObjects.remove(it)
+                userPlacemark = null
+            }
         }
     }
 
