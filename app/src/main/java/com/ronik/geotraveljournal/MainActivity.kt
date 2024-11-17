@@ -4,8 +4,9 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -43,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchManager: SearchManager
     private lateinit var drivingRouter: DrivingRouter
     private lateinit var searchContainer: LinearLayout
-    private lateinit var searchEditText: EditText
+    private lateinit var searchAutoComplete: AutoCompleteTextView
     private lateinit var searchButton: Button
     private lateinit var routeButton: Button
     private lateinit var resetRouteButton: Button
@@ -57,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         true
     }
     private val routeObjects = mutableListOf<PolylineMapObject>()
+    private val suggestionList = mutableListOf<String>()
+    private var suggestionResults = mutableListOf<Point>()
+    private lateinit var suggestionsAdapter: ArrayAdapter<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,18 +70,23 @@ class MainActivity : AppCompatActivity() {
 
         mapView = findViewById(R.id.mapview)
         searchContainer = findViewById(R.id.searchContainer)
-        searchEditText = findViewById(R.id.searchEditText)
+        searchAutoComplete = findViewById(R.id.searchEditText)
         searchButton = findViewById(R.id.searchButton)
         routeButton = findViewById(R.id.routeButton)
         searchIcon = findViewById(R.id.searchIcon)
         resetRouteButton = findViewById(R.id.resetRouteButton)
+
+        suggestionsAdapter = SearchAddressFilterAdapter(
+            this, android.R.layout.simple_dropdown_item_1line, suggestionList
+        )
+        searchAutoComplete.setAdapter(suggestionsAdapter)
+        searchAutoComplete.threshold = 1
 
         searchContainer.visibility = View.GONE
 
         searchIcon.setOnClickListener {
             val isVisible = searchContainer.visibility == View.VISIBLE
             searchContainer.visibility = if (isVisible) View.GONE else View.VISIBLE
-            Log.d("VisibilityCheck", if (isVisible) "Hiding search container" else "Showing search container")
         }
 
         location = Location(this)
@@ -89,8 +98,28 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
 
+        searchAutoComplete.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString()
+                if (query.isNotEmpty()) {
+                    fetchSuggestions(query)
+                }
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
+            val selectedPoint = suggestionResults[position]
+            val selectedName = suggestionList[position]
+            Toast.makeText(this, "Выбрана точка: $selectedName (${selectedPoint.latitude}, ${selectedPoint.longitude})", Toast.LENGTH_SHORT).show()
+            buildRouteTo(selectedPoint)
+        }
+
         searchButton.setOnClickListener {
-            val query = searchEditText.text.toString()
+            val query = searchAutoComplete.text.toString()
             if (query.isNotEmpty()) {
                 searchLocation(query)
             } else {
@@ -110,9 +139,7 @@ class MainActivity : AppCompatActivity() {
 
         val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
         val geoPointer = mapView.map.mapObjects.addPlacemark().apply {
-            location.current { coordinates ->
-                geometry = coordinates
-            }
+            location.current { coordinates -> geometry = coordinates }
             setIcon(imageProvider)
         }
         geoPointer.addTapListener(placemarkTapListener)
@@ -122,23 +149,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun searchLocation(query: String) {
-        val searchOptions = SearchOptions()
-        searchManager.submit(
-            query,
-            VisibleRegionUtils.toPolygon(mapView.map.visibleRegion),
-            searchOptions,
-            object : Session.SearchListener {
+    private fun fetchSuggestions(query: String) {
+        if (query.isNotEmpty()) {
+            val searchOptions = SearchOptions()
+            searchManager.submit(query, VisibleRegionUtils.toPolygon(mapView.map.visibleRegion), searchOptions, object : Session.SearchListener {
                 override fun onSearchResponse(response: Response) {
-                    val point = response.collection.children.firstOrNull()?.obj?.geometry?.get(0)?.point
-                    point?.let { buildRouteTo(it) }
+                    suggestionList.clear()
+                    suggestionResults.clear()
+
+                    response.collection.children.forEach { item ->
+                        val name = item.obj?.name
+                        val point = item.obj?.geometry?.get(0)?.point
+                        if (name != null && point != null) {
+                            suggestionList.add(name)
+                            suggestionResults.add(point)
+                        }
+                    }
+
+                    Log.d("SearchResponse", "Suggestions: $suggestionList")
+                    runOnUiThread {
+                        suggestionsAdapter.notifyDataSetChanged()
+                    }
                 }
 
                 override fun onSearchError(error: com.yandex.runtime.Error) {
-                    Toast.makeText(this@MainActivity, "Ошибка поиска", Toast.LENGTH_SHORT).show()
+                    Log.e("SearchError", "Search error: ${error}")
                 }
+            })
+        }
+    }
+
+    private fun searchLocation(query: String) {
+        val searchOptions = SearchOptions()
+        searchManager.submit(query, VisibleRegionUtils.toPolygon(mapView.map.visibleRegion), searchOptions, object : Session.SearchListener {
+            override fun onSearchResponse(response: Response) {
+                val point = response.collection.children.firstOrNull()?.obj?.geometry?.get(0)?.point
+                point?.let { buildRouteTo(it) }
             }
-        )
+
+            override fun onSearchError(error: com.yandex.runtime.Error) {
+                Toast.makeText(this@MainActivity, "Ошибка поиска", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun moveToUserLocation(userLocation: Point) {
