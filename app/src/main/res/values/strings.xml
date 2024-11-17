@@ -3,4 +3,6 @@
     <string name="hint_enter_address">Введите адрес</string>
     <string name="text_search">Поиск</string>
     <string name="text_build_route">Построить маршрут</string>
+    <string name="search_icon_desc">Найти</string>
+    <string name="text_reset_route">Сбросить маршрут</string>
 </resources>
