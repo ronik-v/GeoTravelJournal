@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchAutoComplete: AutoCompleteTextView
     private lateinit var searchButton: Button
     private lateinit var routeButton: Button
-    private lateinit var resetRouteButton: Button
+    private lateinit var resetRouteButton: ImageButton
     private lateinit var searchIcon: ImageButton
     private lateinit var location: Location
     private var currentRoute: DrivingSession.DrivingRouteListener? = null

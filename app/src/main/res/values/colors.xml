@@ -2,15 +2,15 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFF</color>
-    <color name="yellow">#FFC107</color>
-    <color name="dark_yellow">#D6A000</color>
-    <color name="light_yellow">#FFF8E1</color>
+    <color name="yellow">#A8D5A2</color>
+    <color name="dark_yellow">#7CB67A</color>
+    <color name="light_yellow">#E6F5E5</color>
 
-    <color name="gray">#808080</color>
-    <color name="dark_gray">#505050</color>
-    <color name="very_light_gray">#FAFAFA</color>
+    <color name="gray">#B0D0AF</color>
+    <color name="dark_gray">#8AA68A</color>
+    <color name="very_light_gray">#F0FAF0</color>
 
-    <color name="colorPrimary">#D6A000</color>
-    <color name="colorPrimaryDark">#A57A00</color>
-    <color name="colorAccent">#EDEDED</color>
+    <color name="colorPrimary">#A8D5A2</color>
+    <color name="colorPrimaryDark">#7CB67A</color>
+    <color name="colorAccent">#E6F5E5</color>
 </resources>
