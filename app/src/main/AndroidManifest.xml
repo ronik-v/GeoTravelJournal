@@ -22,7 +22,7 @@
         android:theme="@style/AppTheme"
         tools:targetApi="tiramisu" >
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.MainActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true" >
             <intent-filter>

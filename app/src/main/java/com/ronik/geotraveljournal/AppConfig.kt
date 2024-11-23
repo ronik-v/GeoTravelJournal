@@ -1,6 +1,6 @@
 package com.ronik.geotraveljournal
 
-class BuildAppConfig {
+class AppConfig {
     companion object {
         const val mapApiKey = ""
     }

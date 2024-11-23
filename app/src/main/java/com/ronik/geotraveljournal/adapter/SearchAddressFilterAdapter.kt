@@ -1,4 +1,4 @@
-package com.ronik.geotraveljournal
+package com.ronik.geotraveljournal.adapter
 
 import android.content.Context
 import android.widget.ArrayAdapter
@@ -27,7 +27,8 @@ class SearchAddressFilterAdapter(
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
                 clear()
-                addAll(results?.values as List<String>)
+                val filteredValues = results?.values as? List<String> ?: emptyList()
+                addAll(filteredValues)
                 notifyDataSetChanged()
             }
         }
