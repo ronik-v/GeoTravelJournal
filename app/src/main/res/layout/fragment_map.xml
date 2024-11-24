@@ -22,13 +22,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:contentInsetStart="8dp"
-        app:contentInsetEnd="8dp">
+        app:contentInsetStart="16dp"
+        app:contentInsetEnd="16dp">
 
         <ImageButton
             android:id="@+id/resetRouteButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/text_reset_route"
             android:padding="8dp"
@@ -36,8 +36,8 @@
 
         <ImageButton
             android:id="@+id/searchIcon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/search_icon_desc"
             android:layout_marginStart="16dp"
