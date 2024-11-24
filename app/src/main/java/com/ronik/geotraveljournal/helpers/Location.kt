@@ -1,4 +1,4 @@
-package com.ronik.geotraveljournal
+package com.ronik.geotraveljournal.helpers
 
 import android.content.Context
 import android.content.pm.PackageManager

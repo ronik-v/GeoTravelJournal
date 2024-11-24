@@ -1,18 +1,24 @@
-package com.ronik.geotraveljournal
+package com.ronik.geotraveljournal.activity
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import com.ronik.geotraveljournal.helpers.Location
+import com.ronik.geotraveljournal.R
+import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
@@ -39,7 +45,8 @@ import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.map.VisibleRegionUtils
 import com.yandex.runtime.image.ImageProvider
 
-class MainActivity : AppCompatActivity() {
+
+class MapFragment : Fragment() {
     private lateinit var mapView: MapView
     private lateinit var searchManager: SearchManager
     private lateinit var drivingRouter: DrivingRouter
@@ -54,7 +61,7 @@ class MainActivity : AppCompatActivity() {
     private var userPlacemark: PlacemarkMapObject? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private val placemarkTapListener = MapObjectTapListener { _, point ->
-        Toast.makeText(this, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this.context, "Точка на карте (${point.longitude}, ${point.latitude})", Toast.LENGTH_SHORT).show()
         true
     }
     private val routeObjects = mutableListOf<PolylineMapObject>()
@@ -62,40 +69,52 @@ class MainActivity : AppCompatActivity() {
     private var suggestionResults = mutableListOf<Point>()
     private lateinit var suggestionsAdapter: ArrayAdapter<String>
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        MapKitFactory.setApiKey(BuildAppConfig.mapApiKey)
-        MapKitFactory.initialize(this)
-        setContentView(R.layout.activity_main)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        val rootView = inflater.inflate(R.layout.fragment_map, container, false)
 
-        mapView = findViewById(R.id.mapview)
-        searchContainer = findViewById(R.id.searchContainer)
-        searchAutoComplete = findViewById(R.id.searchEditText)
-        searchButton = findViewById(R.id.searchButton)
-        routeButton = findViewById(R.id.routeButton)
-        searchIcon = findViewById(R.id.searchIcon)
-        resetRouteButton = findViewById(R.id.resetRouteButton)
+        mapView = rootView.findViewById(R.id.mapview)
+        searchAutoComplete = rootView.findViewById(R.id.searchEditText)
+        routeButton = rootView.findViewById(R.id.routeButton)
+        resetRouteButton = rootView.findViewById(R.id.resetRouteButton)
+        searchContainer = rootView.findViewById(R.id.searchContainer)
+        searchIcon = rootView.findViewById(R.id.searchIcon)
+        searchButton = rootView.findViewById(R.id.searchButton)
+        suggestionsAdapter = ArrayAdapter(
+            requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
+        )
+        searchAutoComplete.setAdapter(suggestionsAdapter)
+
+        return rootView
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        MapKitFactory.initialize(requireContext())
+        location = Location(requireContext())
+
+        searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
+        drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)
+
+        if (ContextCompat.checkSelfPermission(mapView.context, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(mapView.context, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(mapView.context as Activity, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+        }
 
         suggestionsAdapter = SearchAddressFilterAdapter(
-            this, android.R.layout.simple_dropdown_item_1line, suggestionList
+            mapView.context, android.R.layout.simple_dropdown_item_1line, suggestionList
         )
         searchAutoComplete.setAdapter(suggestionsAdapter)
         searchAutoComplete.threshold = 1
+
 
         searchContainer.visibility = View.GONE
 
         searchIcon.setOnClickListener {
             val isVisible = searchContainer.visibility == View.VISIBLE
             searchContainer.visibility = if (isVisible) View.GONE else View.VISIBLE
-        }
-
-        location = Location(this)
-        searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
-        drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)
-
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
 
         searchAutoComplete.addTextChangedListener(object : android.text.TextWatcher {
@@ -114,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
             val selectedPoint = suggestionResults[position]
             val selectedName = suggestionList[position]
-            Toast.makeText(this, "Выбрана точка: $selectedName (${selectedPoint.latitude}, ${selectedPoint.longitude})", Toast.LENGTH_SHORT).show()
+            Toast.makeText(mapView.context, "Выбрана точка: $selectedName (${selectedPoint.latitude}, ${selectedPoint.longitude})", Toast.LENGTH_SHORT).show()
             buildRouteTo(selectedPoint)
         }
 
@@ -123,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             if (query.isNotEmpty()) {
                 searchLocation(query)
             } else {
-                Toast.makeText(this, "Введите адрес для поиска", Toast.LENGTH_SHORT).show()
+                Toast.makeText(mapView.context, "Введите адрес для поиска", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -137,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             resetRoute()
         }
 
-        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
+        val imageProvider = ImageProvider.fromResource(mapView.context, R.drawable.ic_pin)
         val geoPointer = mapView.map.mapObjects.addPlacemark().apply {
             location.current { coordinates -> geometry = coordinates }
             setIcon(imageProvider)
@@ -167,9 +186,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     Log.d("SearchResponse", "Suggestions: $suggestionList")
-                    runOnUiThread {
-                        suggestionsAdapter.notifyDataSetChanged()
-                    }
+                    suggestionsAdapter.notifyDataSetChanged()
                 }
 
                 override fun onSearchError(error: com.yandex.runtime.Error) {
@@ -188,7 +205,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onSearchError(error: com.yandex.runtime.Error) {
-                Toast.makeText(this@MainActivity, "Ошибка поиска", Toast.LENGTH_SHORT).show()
+                Toast.makeText(mapView.context, "Ошибка поиска", Toast.LENGTH_SHORT).show()
             }
         })
     }
@@ -196,7 +213,7 @@ class MainActivity : AppCompatActivity() {
     private fun moveToUserLocation(userLocation: Point) {
         if (userPlacemark == null) {
             userPlacemark = mapView.map.mapObjects.addPlacemark(userLocation).apply {
-                setIcon(ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin))
+                setIcon(ImageProvider.fromResource(mapView.context, R.drawable.ic_pin))
             }
         } else {
             userPlacemark?.geometry = userLocation
@@ -227,12 +244,12 @@ class MainActivity : AppCompatActivity() {
                         val routePolyline = mapView.map.mapObjects.addPolyline(routes[0].geometry)
                         routeObjects.add(routePolyline)
                     } else {
-                        Toast.makeText(this@MainActivity, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
-                    Toast.makeText(this@MainActivity, "Ошибка построения маршрута: $error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(mapView.context, "Ошибка построения маршрута: $error", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -256,13 +273,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Deprecated("")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Разрешение на доступ к местоположению предоставлено", Toast.LENGTH_SHORT).show()
+                location.current { coordinates ->
+                    mapView.map.move(CameraPosition(coordinates, 17.0f, 0.0f, 0.0f))
+                }
             } else {
-                Toast.makeText(this, "Необходимо предоставить разрешение на доступ к местоположению", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Разрешение на использование геолокации отклонено", Toast.LENGTH_SHORT).show()
             }
         }
     }
