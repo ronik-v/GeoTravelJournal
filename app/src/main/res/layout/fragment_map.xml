@@ -25,24 +25,63 @@
         app:contentInsetStart="16dp"
         app:contentInsetEnd="16dp">
 
-        <ImageButton
-            android:id="@+id/resetRouteButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/text_reset_route"
-            android:padding="8dp"
-            android:src="@drawable/ic_close" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <ImageButton
-            android:id="@+id/searchIcon"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/search_icon_desc"
-            android:layout_marginStart="16dp"
-            android:padding="8dp"
-            android:src="@drawable/ic_search" />
+            <ImageButton
+                android:id="@+id/resetRouteButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/text_reset_route"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageButton
+                android:id="@+id/searchIcon"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/search_icon_desc"
+                android:layout_marginStart="16dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_search"
+                app:layout_constraintStart_toEndOf="@id/resetRouteButton"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageButton
+                android:id="@+id/increaseMap"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/text_increase_map"
+                android:layout_marginEnd="16dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_increase_map"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageButton
+                android:id="@+id/decreaseMap"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/text_decrease_map"
+                android:layout_marginEnd="16dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_decrease_map"
+                app:layout_constraintEnd_toStartOf="@id/increaseMap"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.appcompat.widget.Toolbar>
 
     <LinearLayout

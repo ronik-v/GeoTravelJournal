@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.ronik.geotraveljournal.Config
 import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.R
 import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
@@ -56,6 +57,8 @@ class MapFragment : Fragment() {
     private lateinit var routeButton: Button
     private lateinit var resetRouteButton: ImageButton
     private lateinit var searchIcon: ImageButton
+    private lateinit var increaseMap: ImageButton
+    private lateinit var decreaseMap: ImageButton
     private lateinit var location: Location
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
     private var userPlacemark: PlacemarkMapObject? = null
@@ -81,6 +84,9 @@ class MapFragment : Fragment() {
         searchContainer = rootView.findViewById(R.id.searchContainer)
         searchIcon = rootView.findViewById(R.id.searchIcon)
         searchButton = rootView.findViewById(R.id.searchButton)
+        increaseMap = rootView.findViewById(R.id.increaseMap)
+        decreaseMap = rootView.findViewById(R.id.decreaseMap)
+
         suggestionsAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
         )
@@ -146,6 +152,14 @@ class MapFragment : Fragment() {
             }
         }
 
+        increaseMap.setOnClickListener {
+            changeMapZoom(Config.mapZoomIncrease)
+        }
+
+        decreaseMap.setOnClickListener {
+            changeMapZoom(Config.mapZoomDecrease)
+        }
+
         routeButton.setOnClickListener {
             location.current { coordinates ->
                 buildRouteTo(coordinates)
@@ -166,6 +180,22 @@ class MapFragment : Fragment() {
         location.current { coordinates ->
             mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
         }
+    }
+
+    private fun changeMapZoom(zoomValue: Float) {
+        val currentCameraPosition = mapView.map.cameraPosition
+        val newCameraPosition = currentCameraPosition.zoom + zoomValue
+
+        mapView.map.move(
+            CameraPosition(
+                currentCameraPosition.target,
+                newCameraPosition,
+                currentCameraPosition.azimuth,
+                currentCameraPosition.tilt
+            ),
+            Animation(Animation.Type.SMOOTH, 0.5f),
+            null
+        )
     }
 
     private fun fetchSuggestions(query: String) {

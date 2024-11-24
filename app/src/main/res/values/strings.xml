@@ -5,4 +5,6 @@
     <string name="text_current_position">Моя позиция</string>
     <string name="search_icon_desc">Найти</string>
     <string name="text_reset_route">Сбросить маршрут</string>
+    <string name="text_increase_map">Увеличить карту</string>
+    <string name="text_decrease_map">Уменьшить карту</string>
 </resources>
