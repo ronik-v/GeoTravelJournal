@@ -1,6 +1,7 @@
 package com.ronik.geotraveljournal.activity
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -33,6 +34,7 @@ import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
@@ -44,8 +46,8 @@ import com.yandex.mapkit.search.SearchManagerType
 import com.yandex.mapkit.search.SearchOptions
 import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.map.VisibleRegionUtils
+import com.yandex.mapkit.map.Map
 import com.yandex.runtime.image.ImageProvider
-
 
 class MapFragment : Fragment() {
     private lateinit var mapView: MapView
@@ -59,6 +61,7 @@ class MapFragment : Fragment() {
     private lateinit var searchIcon: ImageButton
     private lateinit var increaseMap: ImageButton
     private lateinit var decreaseMap: ImageButton
+    private lateinit var buildPointsButton: ImageButton
     private lateinit var location: Location
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
     private var userPlacemark: PlacemarkMapObject? = null
@@ -71,6 +74,10 @@ class MapFragment : Fragment() {
     private val suggestionList = mutableListOf<String>()
     private var suggestionResults = mutableListOf<Point>()
     private lateinit var suggestionsAdapter: ArrayAdapter<String>
+
+    private var startPoint: Point? = null
+    private var endPoint: Point? = null
+    private var placemarks = mutableListOf<PlacemarkMapObject>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -86,6 +93,7 @@ class MapFragment : Fragment() {
         searchButton = rootView.findViewById(R.id.searchButton)
         increaseMap = rootView.findViewById(R.id.increaseMap)
         decreaseMap = rootView.findViewById(R.id.decreaseMap)
+        buildPointsButton = rootView.findViewById(R.id.buildPointsButton)
 
         suggestionsAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
@@ -114,7 +122,6 @@ class MapFragment : Fragment() {
         )
         searchAutoComplete.setAdapter(suggestionsAdapter)
         searchAutoComplete.threshold = 1
-
 
         searchContainer.visibility = View.GONE
 
@@ -170,6 +177,11 @@ class MapFragment : Fragment() {
             resetRoute()
         }
 
+        buildPointsButton.setOnClickListener {
+            resetRoute()
+            setupRouteBuilding()
+        }
+
         val imageProvider = ImageProvider.fromResource(mapView.context, R.drawable.ic_pin)
         val geoPointer = mapView.map.mapObjects.addPlacemark().apply {
             location.current { coordinates -> geometry = coordinates }
@@ -182,48 +194,115 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun changeMapZoom(zoomValue: Float) {
-        val currentCameraPosition = mapView.map.cameraPosition
-        val newCameraPosition = currentCameraPosition.zoom + zoomValue
+    private val inputListener = object : InputListener {
+        override fun onMapTap(map: Map, point: Point) {
+            if (startPoint == null) {
+                startPoint = point
+                val startPlacemark = mapView.map.mapObjects.addPlacemark(point).apply {
+                    userData = "Start Point"
+                }
+                placemarks.add(startPlacemark)
+            } else if (endPoint == null) {
+                endPoint = point
+                val endPlacemark = mapView.map.mapObjects.addPlacemark(point).apply {
+                    userData = "End Point"
+                }
+                placemarks.add(endPlacemark)
 
-        mapView.map.move(
-            CameraPosition(
-                currentCameraPosition.target,
-                newCameraPosition,
-                currentCameraPosition.azimuth,
-                currentCameraPosition.tilt
-            ),
-            Animation(Animation.Type.SMOOTH, 0.5f),
-            null
-        )
+                showConfirmDialog()
+            }
+        }
+
+        override fun onMapLongTap(map: Map, point: Point) {}
+    }
+
+    private fun setupRouteBuilding() {
+        mapView.map.removeInputListener(inputListener)
+        mapView.map.addInputListener(inputListener)
+    }
+
+    private fun showConfirmDialog() {
+        AlertDialog.Builder(mapView.context).apply {
+            setTitle("Подтверждение")
+            setMessage("Построить маршрут между двумя точками?")
+            setPositiveButton("Да") { _, _ ->
+                buildCustomPointsRoute()
+            }
+            setNegativeButton("Отмена") { _, _ ->
+                resetRoute()
+            }
+            create()
+            show()
+        }
+    }
+
+    private fun buildCustomPointsRoute() {
+        if (startPoint != null && endPoint != null) {
+            val drivingOptions = DrivingOptions()
+            val vehicleOptions = VehicleOptions()
+            val requestPoints = listOf(
+                RequestPoint(startPoint!!, RequestPointType.WAYPOINT, null, null),
+                RequestPoint(endPoint!!, RequestPointType.WAYPOINT, null, null)
+            )
+
+            val drivingSession = drivingRouter.requestRoutes(requestPoints, drivingOptions, vehicleOptions, object : DrivingSession.DrivingRouteListener {
+                override fun onDrivingRoutes(routes: List<DrivingRoute>) {
+                    for (route in routes) {
+                        val routeMapObject = mapView.map.mapObjects.addPolyline(route.geometry)
+                        routeObjects.add(routeMapObject)
+                    }
+                }
+
+                override fun onDrivingRoutesError(error: com.yandex.runtime.Error) {
+                    Log.e("DrivingRoute", "Error: $error")
+                }
+            })
+        } else {
+            Toast.makeText(mapView.context, "Необходимо выбрать начальную и конечную точку", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun resetRoute() {
+        Log.d("MAP", "Map objects = ${mapView.map.mapObjects}")
+
+        routeObjects.forEach { route ->
+            if (route.isValid) {
+                mapView.map.mapObjects.remove(route)
+            }
+        }
+        routeObjects.clear()
+        currentRoute = null
+        startPoint = null
+        endPoint = null
+        placemarks.clear()
+
+        mapView.rootView.refreshDrawableState()
+
+        //mapView.map.mapObjects.clear()
+
+        Log.d("MAP DELETE", "Map objects after delete = ${mapView.map.mapObjects}")
     }
 
     private fun fetchSuggestions(query: String) {
-        if (query.isNotEmpty()) {
-            val searchOptions = SearchOptions()
-            searchManager.submit(query, VisibleRegionUtils.toPolygon(mapView.map.visibleRegion), searchOptions, object : Session.SearchListener {
-                override fun onSearchResponse(response: Response) {
-                    suggestionList.clear()
-                    suggestionResults.clear()
+        searchManager.submit(query, VisibleRegionUtils.toPolygon(mapView.map.visibleRegion), SearchOptions(), object : Session.SearchListener {
+            override fun onSearchResponse(response: Response) {
+                suggestionList.clear()
+                suggestionResults.clear()
 
-                    response.collection.children.forEach { item ->
-                        val name = item.obj?.name
-                        val point = item.obj?.geometry?.get(0)?.point
-                        if (name != null && point != null) {
-                            suggestionList.add(name)
-                            suggestionResults.add(point)
-                        }
+                for (searchResult in response.collection.children) {
+                    val resultLocation = searchResult.obj?.geometry?.get(0)?.point
+                    if (resultLocation != null) {
+                        searchResult.obj!!.name?.let { suggestionList.add(it) }
+                        suggestionResults.add(resultLocation)
                     }
-
-                    Log.d("SearchResponse", "Suggestions: $suggestionList")
-                    suggestionsAdapter.notifyDataSetChanged()
                 }
+                suggestionsAdapter.notifyDataSetChanged()
+            }
 
-                override fun onSearchError(error: com.yandex.runtime.Error) {
-                    Log.e("SearchError", "Search error: ${error}")
-                }
-            })
-        }
+            override fun onSearchError(error: com.yandex.runtime.Error) {
+                Toast.makeText(mapView.context, "Ошибка поиска: $error", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun searchLocation(query: String) {
@@ -238,6 +317,11 @@ class MapFragment : Fragment() {
                 Toast.makeText(mapView.context, "Ошибка поиска", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun changeMapZoom(zoomChange: Float) {
+        val currentPosition = mapView.map.cameraPosition
+        mapView.map.move(CameraPosition(currentPosition.target, currentPosition.zoom + zoomChange, currentPosition.azimuth, currentPosition.tilt), Animation(Animation.Type.SMOOTH, 1.0f), null)
     }
 
     private fun moveToUserLocation(userLocation: Point) {
@@ -287,46 +371,24 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun resetRoute() {
-        routeObjects.forEach { route ->
-            if (route.isValid) {
-                mapView.map.mapObjects.remove(route)
-            }
-        }
-        routeObjects.clear()
-        currentRoute = null
-        userPlacemark?.let {
-            if (it.isValid) {
-                mapView.map.mapObjects.remove(it)
-                userPlacemark = null
-            }
-        }
-    }
-
-    @Deprecated("")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                location.current { coordinates ->
-                    mapView.map.move(CameraPosition(coordinates, 17.0f, 0.0f, 0.0f))
-                }
-            } else {
-                Toast.makeText(context, "Разрешение на использование геолокации отклонено", Toast.LENGTH_SHORT).show()
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            location.current { coordinates ->
+                mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
             }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        MapKitFactory.getInstance().onStart()
         mapView.onStart()
+        MapKitFactory.getInstance().onStart()
     }
 
     override fun onStop() {
+        super.onStop()
         mapView.onStop()
         MapKitFactory.getInstance().onStop()
-        super.onStop()
     }
 
     override fun onResume() {
