@@ -7,4 +7,5 @@
     <string name="text_reset_route">Сбросить маршрут</string>
     <string name="text_increase_map">Увеличить карту</string>
     <string name="text_decrease_map">Уменьшить карту</string>
+    <string name="text_create_custom_route">Создать маршрут по точкам</string>
 </resources>

@@ -174,11 +174,11 @@ class MapFragment : Fragment() {
         }
 
         resetRouteButton.setOnClickListener {
-            resetRoute()
+            clearMapView()
         }
 
         buildPointsButton.setOnClickListener {
-            resetRoute()
+            clearMapView()
             setupRouteBuilding()
         }
 
@@ -229,7 +229,7 @@ class MapFragment : Fragment() {
                 buildCustomPointsRoute()
             }
             setNegativeButton("Отмена") { _, _ ->
-                resetRoute()
+                clearMapView()
             }
             create()
             show()
@@ -247,9 +247,11 @@ class MapFragment : Fragment() {
 
             val drivingSession = drivingRouter.requestRoutes(requestPoints, drivingOptions, vehicleOptions, object : DrivingSession.DrivingRouteListener {
                 override fun onDrivingRoutes(routes: List<DrivingRoute>) {
-                    for (route in routes) {
-                        val routeMapObject = mapView.map.mapObjects.addPolyline(route.geometry)
+                    if (routes.isNotEmpty()) {
+                        val routeMapObject = mapView.map.mapObjects.addPolyline(routes[0].geometry)
                         routeObjects.add(routeMapObject)
+                    } else {
+                        Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
                 }
 
@@ -262,25 +264,23 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun resetRoute() {
-        Log.d("MAP", "Map objects = ${mapView.map.mapObjects}")
-
+    private fun clearMapView() {
         routeObjects.forEach { route ->
             if (route.isValid) {
                 mapView.map.mapObjects.remove(route)
             }
         }
         routeObjects.clear()
+
+        placemarks.forEach { point ->
+            if (point.isValid) { mapView.map.mapObjects.remove(point) }
+        }
+        placemarks.clear()
+
         currentRoute = null
         startPoint = null
         endPoint = null
-        placemarks.clear()
-
-        mapView.rootView.refreshDrawableState()
-
-        //mapView.map.mapObjects.clear()
-
-        Log.d("MAP DELETE", "Map objects after delete = ${mapView.map.mapObjects}")
+        userPlacemark = null
     }
 
     private fun fetchSuggestions(query: String) {
@@ -337,10 +337,12 @@ class MapFragment : Fragment() {
             CameraPosition(userLocation, 17.0f, 0.0f, 0.0f),
             Animation(Animation.Type.SMOOTH, 1.5f)
         ) { Log.d("CameraMove", "Camera finished moving to user location") }
+
+        placemarks.add(userPlacemark!!)
     }
 
     private fun buildRouteTo(destination: Point) {
-        resetRoute()
+        clearMapView()
 
         location.current { userLocation ->
             moveToUserLocation(userLocation)
