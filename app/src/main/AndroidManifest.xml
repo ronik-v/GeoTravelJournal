@@ -23,6 +23,7 @@
         tools:targetApi="tiramisu" >
         <activity
             android:name=".activity.MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize"
             android:exported="true" >
             <intent-filter>
