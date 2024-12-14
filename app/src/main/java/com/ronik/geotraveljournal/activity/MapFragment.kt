@@ -21,6 +21,7 @@ import com.ronik.geotraveljournal.Config
 import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.R
 import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
+import com.ronik.geotraveljournal.helpers.RouteFollower
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
@@ -63,6 +64,7 @@ class MapFragment : Fragment() {
     private lateinit var decreaseMap: ImageButton
     private lateinit var buildPointsButton: ImageButton
     private lateinit var location: Location
+    private var routeFollower: RouteFollower? = null
     private var currentRoute: DrivingSession.DrivingRouteListener? = null
     private var userPlacemark: PlacemarkMapObject? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -175,6 +177,7 @@ class MapFragment : Fragment() {
 
         resetRouteButton.setOnClickListener {
             clearMapView()
+            routeFollower?.stopRouteFollowing()
         }
 
         buildPointsButton.setOnClickListener {
@@ -248,8 +251,13 @@ class MapFragment : Fragment() {
             val drivingSession = drivingRouter.requestRoutes(requestPoints, drivingOptions, vehicleOptions, object : DrivingSession.DrivingRouteListener {
                 override fun onDrivingRoutes(routes: List<DrivingRoute>) {
                     if (routes.isNotEmpty()) {
-                        val routeMapObject = mapView.map.mapObjects.addPolyline(routes[0].geometry)
+                        val route = routes[0]
+
+                        val routeMapObject = mapView.map.mapObjects.addPolyline(route.geometry)
                         routeObjects.add(routeMapObject)
+
+                        routeFollower = RouteFollower(mapView.context, mapView, route.geometry.points)
+                        routeFollower?.startRouteFollowing()
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
@@ -276,6 +284,7 @@ class MapFragment : Fragment() {
             if (point.isValid) { mapView.map.mapObjects.remove(point) }
         }
         placemarks.clear()
+        routeFollower?.clearData()
 
         currentRoute = null
         startPoint = null
@@ -357,8 +366,13 @@ class MapFragment : Fragment() {
             val drivingRouteListener = object : DrivingSession.DrivingRouteListener {
                 override fun onDrivingRoutes(routes: List<DrivingRoute>) {
                     if (routes.isNotEmpty()) {
-                        val routePolyline = mapView.map.mapObjects.addPolyline(routes[0].geometry)
+                        val route = routes[0]
+
+                        val routePolyline = mapView.map.mapObjects.addPolyline(route.geometry)
                         routeObjects.add(routePolyline)
+
+                        routeFollower = RouteFollower(mapView.context, mapView, route.geometry.points)
+                        routeFollower?.startRouteFollowing()
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
