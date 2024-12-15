@@ -3,6 +3,8 @@ package com.ronik.geotraveljournal.activity
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,6 +15,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -183,6 +186,7 @@ class MapFragment : Fragment() {
             routeFollower?.clearData()
 
             routeFollower = null
+            trackRouteButton.visibility = View.GONE
         }
 
         buildPointsButton.setOnClickListener {
@@ -245,7 +249,7 @@ class MapFragment : Fragment() {
     }
 
     private fun showConfirmDialog() {
-        AlertDialog.Builder(mapView.context).apply {
+        val dialog = AlertDialog.Builder(mapView.context).apply {
             setTitle("Подтверждение")
             setMessage("Построить маршрут между двумя точками?")
             setPositiveButton("Да") { _, _ ->
@@ -255,8 +259,16 @@ class MapFragment : Fragment() {
                 clearMapView()
             }
             create()
-            show()
         }
+
+        val dialogInstance = dialog.create()
+        dialogInstance.show()
+
+        val positiveButton: Button = dialogInstance.getButton(AlertDialog.BUTTON_POSITIVE)
+        val negativeButton: Button = dialogInstance.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+        positiveButton.setTextColor(Color.BLACK)
+        negativeButton.setTextColor(Color.BLACK)
     }
 
     private fun buildCustomPointsRoute() {
