@@ -63,9 +63,10 @@ class MapFragment : Fragment() {
     private lateinit var increaseMap: ImageButton
     private lateinit var decreaseMap: ImageButton
     private lateinit var buildPointsButton: ImageButton
+    private lateinit var trackRouteButton: Button
     private lateinit var location: Location
     private var routeFollower: RouteFollower? = null
-    private var currentRoute: DrivingSession.DrivingRouteListener? = null
+    private var currentRoute: DrivingRoute? = null
     private var userPlacemark: PlacemarkMapObject? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private val placemarkTapListener = MapObjectTapListener { _, point ->
@@ -96,6 +97,7 @@ class MapFragment : Fragment() {
         increaseMap = rootView.findViewById(R.id.increaseMap)
         decreaseMap = rootView.findViewById(R.id.decreaseMap)
         buildPointsButton = rootView.findViewById(R.id.buildPointsButton)
+        trackRouteButton = rootView.findViewById(R.id.trackRouteButton)
 
         suggestionsAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
@@ -178,11 +180,19 @@ class MapFragment : Fragment() {
         resetRouteButton.setOnClickListener {
             clearMapView()
             routeFollower?.stopRouteFollowing()
+            routeFollower?.clearData()
+
+            routeFollower = null
         }
 
         buildPointsButton.setOnClickListener {
             clearMapView()
             setupRouteBuilding()
+        }
+
+        trackRouteButton.setOnClickListener {
+            currentRoute?.let { it1 -> startTrackingRoute(it1) }
+            trackRouteButton.visibility = View.GONE
         }
 
         val imageProvider = ImageProvider.fromResource(mapView.context, R.drawable.ic_pin)
@@ -217,6 +227,16 @@ class MapFragment : Fragment() {
         }
 
         override fun onMapLongTap(map: Map, point: Point) {}
+    }
+
+    private fun startTrackingRoute(currentRoute: DrivingRoute) {
+        if (routeFollower == null) {
+            routeFollower = RouteFollower(mapView.context, mapView, currentRoute.geometry.points)
+            routeFollower?.startRouteFollowing()
+            Toast.makeText(mapView.context, "Отслеживание маршрута начато", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(mapView.context, "Маршрут уже отслеживается", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupRouteBuilding() {
@@ -255,9 +275,9 @@ class MapFragment : Fragment() {
 
                         val routeMapObject = mapView.map.mapObjects.addPolyline(route.geometry)
                         routeObjects.add(routeMapObject)
+                        currentRoute = route
 
-                        routeFollower = RouteFollower(mapView.context, mapView, route.geometry.points)
-                        routeFollower?.startRouteFollowing()
+                        trackRouteButton.visibility = View.VISIBLE
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
@@ -284,7 +304,6 @@ class MapFragment : Fragment() {
             if (point.isValid) { mapView.map.mapObjects.remove(point) }
         }
         placemarks.clear()
-        routeFollower?.clearData()
 
         currentRoute = null
         startPoint = null
@@ -370,9 +389,9 @@ class MapFragment : Fragment() {
 
                         val routePolyline = mapView.map.mapObjects.addPolyline(route.geometry)
                         routeObjects.add(routePolyline)
+                        currentRoute = route
 
-                        routeFollower = RouteFollower(mapView.context, mapView, route.geometry.points)
-                        routeFollower?.startRouteFollowing()
+                        trackRouteButton.visibility = View.VISIBLE
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
@@ -411,5 +430,11 @@ class MapFragment : Fragment() {
         super.onResume()
         MapKitFactory.getInstance().onStart()
         mapView.onStart()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        routeFollower?.stopRouteFollowing()
+        routeFollower = null
     }
 }
