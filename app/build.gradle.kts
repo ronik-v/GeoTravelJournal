@@ -7,6 +7,15 @@ android {
     namespace = "com.ronik.geotraveljournal"
     compileSdk = 34
 
+    // for compose
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.3"
+    }
+
     defaultConfig {
         applicationId = "com.ronik.geotraveljournal"
         minSdk = 26
@@ -38,6 +47,14 @@ dependencies {
     // Main dependencies
     implementation("com.yandex.android:maps.mobile:4.8.1-full")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Compose dependencies
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.compose.ui:ui:1.7.6")
+    implementation("androidx.compose.material:material:1.7.6")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
