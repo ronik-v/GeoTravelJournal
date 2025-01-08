@@ -2,9 +2,9 @@ package com.ronik.geotraveljournal.activity
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,15 +15,15 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.ronik.geotraveljournal.Config
-import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.R
+import com.ronik.geotraveljournal.activity.route_history.RouteHistoryActivity
 import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
+import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.helpers.RouteFollower
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
@@ -39,9 +39,11 @@ import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.InputListener
+import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
+import com.yandex.mapkit.map.VisibleRegionUtils
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.search.Response
 import com.yandex.mapkit.search.SearchFactory
@@ -49,8 +51,6 @@ import com.yandex.mapkit.search.SearchManager
 import com.yandex.mapkit.search.SearchManagerType
 import com.yandex.mapkit.search.SearchOptions
 import com.yandex.mapkit.search.Session
-import com.yandex.mapkit.map.VisibleRegionUtils
-import com.yandex.mapkit.map.Map
 import com.yandex.runtime.image.ImageProvider
 
 class MapFragment : Fragment() {
@@ -67,6 +67,7 @@ class MapFragment : Fragment() {
     private lateinit var decreaseMap: ImageButton
     private lateinit var buildPointsButton: ImageButton
     private lateinit var trackRouteButton: Button
+    private lateinit var mapOverlayButton: ImageButton
     private lateinit var location: Location
     private var routeFollower: RouteFollower? = null
     private var currentRoute: DrivingRoute? = null
@@ -101,6 +102,7 @@ class MapFragment : Fragment() {
         decreaseMap = rootView.findViewById(R.id.decreaseMap)
         buildPointsButton = rootView.findViewById(R.id.buildPointsButton)
         trackRouteButton = rootView.findViewById(R.id.trackRouteButton)
+        mapOverlayButton =  rootView.findViewById(R.id.mapOverlayButton)
 
         suggestionsAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
@@ -131,6 +133,11 @@ class MapFragment : Fragment() {
         searchAutoComplete.threshold = 1
 
         searchContainer.visibility = View.GONE
+
+        mapOverlayButton.setOnClickListener {
+            val intent = Intent(requireContext(), RouteHistoryActivity::class.java)
+            startActivity(intent)
+        }
 
         searchIcon.setOnClickListener {
             val isVisible = searchContainer.visibility == View.VISIBLE
