@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ronik.geotraveljournal.activity.route_history.MapFragmentScreen
 import com.ronik.geotraveljournal.activity.route_history.RouteDetailScreen
 import com.ronik.geotraveljournal.activity.route_history.RouteHistoryScreen
 import com.ronik.geotraveljournal.serializers.Route
@@ -43,8 +44,12 @@ fun AppNavigation() {
                     coroutineScope.launch {
                         selectedRouteDetail.value = routeDetail
                     }
-                }
+                },
+                navController = navController
             )
+        }
+        composable("mapFragment") {
+            MapFragmentScreen()
         }
     }
 
