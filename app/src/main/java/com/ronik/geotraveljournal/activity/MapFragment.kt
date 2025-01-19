@@ -67,7 +67,7 @@ class MapFragment : Fragment() {
     private lateinit var decreaseMap: ImageButton
     private lateinit var buildPointsButton: ImageButton
     private lateinit var trackRouteButton: Button
-    private lateinit var mapOverlayButton: ImageButton
+    private lateinit var mapOverlayButton: Button
     private lateinit var location: Location
     private var routeFollower: RouteFollower? = null
     private var currentRoute: DrivingRoute? = null
