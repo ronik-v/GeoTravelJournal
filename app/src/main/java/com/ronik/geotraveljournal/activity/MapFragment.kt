@@ -60,7 +60,7 @@ class MapFragment : Fragment() {
     private lateinit var searchContainer: LinearLayout
     private lateinit var searchAutoComplete: AutoCompleteTextView
     private lateinit var searchButton: Button
-    private lateinit var routeButton: Button
+    private lateinit var routeButton: ImageButton
     private lateinit var resetRouteButton: ImageButton
     private lateinit var searchIcon: ImageButton
     private lateinit var increaseMap: ImageButton
