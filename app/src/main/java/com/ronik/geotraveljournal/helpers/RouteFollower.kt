@@ -3,6 +3,8 @@ package com.ronik.geotraveljournal.helpers
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -15,10 +17,14 @@ import com.google.android.gms.location.Priority
 import com.ronik.geotraveljournal.R
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.map.MapObjectCollection
-import com.yandex.mapkit.map.PlacemarkMapObject
+import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class RouteFollower(
     private val context: Context,
@@ -27,27 +33,46 @@ class RouteFollower(
 ) {
     private val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     private var locationCallback: LocationCallback? = null
-    private var marker: PlacemarkMapObject? = null
-    private var routeLine: MapObjectCollection = mapView.map.mapObjects.addCollection()
+    private var marker = mapView.map.mapObjects.addPlacemark(routePoints.first(), ImageProvider.fromBitmap(getBitmapFromVectorDrawable(context, R.drawable.navigator)))
+    private var routeLine: PolylineMapObject? = null
     private val routeGyroscope: RouteGyroscope
 
     init {
-        marker = mapView.map.mapObjects.addPlacemark(
-            routePoints.first(),
-            ImageProvider.fromResource(context, R.drawable.navigator)
-        )
         routeGyroscope = RouteGyroscope(context) { azimuth -> rotateMarker(azimuth) }
+        drawRoute()
     }
 
-    private fun startGyroscope() = routeGyroscope.startListening()
+    private fun getBitmapFromVectorDrawable(context: Context, drawableId: Int): Bitmap {
+        val drawable = ContextCompat.getDrawable(context, drawableId) ?: throw IllegalArgumentException("Drawable not found")
+        val width = drawable.intrinsicWidth
+        val height = drawable.intrinsicHeight
+        drawable.setBounds(0, 0, width, height)
 
-    private fun stopGyroscope() = routeGyroscope.stopListening()
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.draw(canvas)
 
-    fun clearData() {
-        marker?.let { mapView.map.mapObjects.remove(it) }
-        routeLine.clear()
-        marker = null
-        routeLine = mapView.map.mapObjects.addCollection()
+        return bitmap
+    }
+
+    private fun drawRoute(traveledPoints: List<Point> = emptyList(), remainingPoints: List<Point> = routePoints) {
+        routeLine?.let { mapView.map.mapObjects.remove(it) }
+
+        if (traveledPoints.isNotEmpty()) {
+            mapView.map.mapObjects.addPolyline(
+                com.yandex.mapkit.geometry.Polyline(traveledPoints)
+            ).apply {
+                setStrokeColor(0xFF87CEEB.toInt())
+            }
+        }
+
+        if (remainingPoints.isNotEmpty()) {
+            routeLine = mapView.map.mapObjects.addPolyline(
+                com.yandex.mapkit.geometry.Polyline(remainingPoints)
+            ).apply {
+                setStrokeColor(0xFF0000FF.toInt())
+            }
+        }
     }
 
     fun startRouteFollowing() {
@@ -55,7 +80,6 @@ class RouteFollower(
             throw SecurityException("Location permission not granted")
         }
 
-        drawRoute()
         startGyroscope()
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
@@ -64,7 +88,7 @@ class RouteFollower(
                 locationResult.lastLocation?.let {
                     val userLocation = Point(it.latitude, it.longitude)
                     updateMarkerPosition(userLocation)
-                    moveCameraToLocation(userLocation)
+                    moveCameraAlongRoute(userLocation)
                 }
             }
         }
@@ -91,20 +115,59 @@ class RouteFollower(
         stopGyroscope()
     }
 
-    private fun drawRoute() {
-        val polyline = routeLine.addPolyline(com.yandex.mapkit.geometry.Polyline(routePoints))
-        polyline.setStrokeColor(0xFF0000FF.toInt())
-    }
-
     private fun updateMarkerPosition(location: Point) {
-        marker?.geometry = location
+        marker.geometry = location
+
+        val closestIndex = routePoints.indexOfFirst { point ->
+            haversineDistance(location, point) < 10.0
+        }
+
+        if (closestIndex != -1) {
+            val traveledPoints = routePoints.subList(0, closestIndex + 1)
+            val remainingPoints = routePoints.subList(closestIndex, routePoints.size)
+
+            drawRoute(traveledPoints, remainingPoints)
+        }
     }
 
-    private fun moveCameraToLocation(location: Point) {
-        mapView.map.move(CameraPosition(location, 14f, 0f, 0f))
+    private fun haversineDistance(point1: Point, point2: Point): Double {
+        val earthRadius = 6371000.0
+
+        val lat1 = Math.toRadians(point1.latitude)
+        val lon1 = Math.toRadians(point1.longitude)
+        val lat2 = Math.toRadians(point2.latitude)
+        val lon2 = Math.toRadians(point2.longitude)
+
+        val dLat = lat2 - lat1
+        val dLon = lon2 - lon1
+
+        val a = sin(dLat / 2).pow(2.0) +
+                cos(lat1) * cos(lat2) * sin(dLon / 2).pow(2.0)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadius * c
     }
 
-    private fun rotateMarker(azimuth: Float) = marker?.apply { direction = azimuth }
+    private fun moveCameraAlongRoute(location: Point) {
+        val nextPoint = routePoints.find { it != location } ?: return
+        val azimuth = calculateAzimuth(location, nextPoint)
+
+        mapView.map.move(CameraPosition(location, 14f, azimuth, 0f))
+    }
+
+    private fun calculateAzimuth(from: Point, to: Point): Float {
+        val deltaY = to.latitude - from.latitude
+        val deltaX = to.longitude - from.longitude
+        return Math.toDegrees(atan2(deltaY, deltaX)).toFloat()
+    }
+
+    private fun rotateMarker(azimuth: Float) {
+        marker.direction = azimuth
+    }
+
+    private fun startGyroscope() = routeGyroscope.startListening()
+
+    private fun stopGyroscope() = routeGyroscope.stopListening()
 
     private fun checkLocationPermissions(): Boolean {
         val fineLocationGranted = ContextCompat.checkSelfPermission(
@@ -116,5 +179,11 @@ class RouteFollower(
         ) == PackageManager.PERMISSION_GRANTED
 
         return fineLocationGranted && coarseLocationGranted
+    }
+
+    fun clearData() {
+        marker.let { if (it.isValid) mapView.map.mapObjects.remove(it) }
+        routeLine?.let { mapView.map.mapObjects.remove(it) }
+        routeLine = null
     }
 }
