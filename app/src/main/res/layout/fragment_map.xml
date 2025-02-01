@@ -185,6 +185,7 @@
             <Button
                 android:id="@+id/searchButton"
                 style="@style/ButtonStyle"
+                android:visibility="gone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"

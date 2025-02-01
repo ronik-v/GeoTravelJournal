@@ -149,8 +149,13 @@ class MapFragment : Fragment() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString()
+
                 if (query.isNotEmpty()) {
+                    searchButton.visibility = View.VISIBLE
+
                     fetchSuggestions(query)
+                } else {
+                    searchButton.visibility = View.GONE
                 }
             }
 
