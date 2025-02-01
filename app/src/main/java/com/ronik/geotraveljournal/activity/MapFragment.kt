@@ -37,6 +37,7 @@ import com.yandex.mapkit.directions.driving.DrivingRouterType
 import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.Map
@@ -220,6 +221,41 @@ class MapFragment : Fragment() {
 
         location.current { coordinates ->
             mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
+        }
+
+        showRouteFromHistory()
+    }
+
+    private fun showRouteFromHistory() {
+        if (mapView != null) {
+            val routeString = arguments?.getString("route")
+            Log.d("MapFragment", "Получен маршрут: $routeString")
+
+            val routePoints = routeString?.split(";")?.mapNotNull { pointStr ->
+                val coords = pointStr.split(",")
+                if (coords.size == 2) {
+                    try {
+                        Point(coords[0].toDouble(), coords[1].toDouble())
+                    } catch (e: NumberFormatException) {
+                        Log.e("MapFragment", "Ошибка парсинга координат: $pointStr", e)
+                        null
+                    }
+                } else null
+            } ?: emptyList()
+
+            if (routePoints.isNotEmpty()) {
+                Log.d("MapFragment", "Отображение маршрута с ${routePoints.size} точками")
+
+                val polyline = mapView.map.mapObjects.addPolyline(Polyline(routePoints))
+                polyline.setStrokeColor(Color.BLUE)
+                polyline.strokeWidth = 5f
+
+                mapView.map.move(CameraPosition(routePoints.first(), 10f, 0f, 0f))
+            } else {
+                Log.w("MapFragment", "Маршрут пуст или некорректен")
+            }
+        } else {
+            Log.e("MapFragment", "mapView is null")
         }
     }
 

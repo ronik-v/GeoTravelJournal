@@ -27,15 +27,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.ronik.geotraveljournal.serializers.RouteDetail
 import com.ronik.geotraveljournal.utils.GeoTravelTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteDetailScreen(
     routeDetail: RouteDetail,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    navController: NavController
 ) {
+    val formattedDate = LocalDateTime.parse(routeDetail.createdAt, DateTimeFormatter.ISO_DATE_TIME)
+        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
     GeoTravelTheme {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
@@ -98,33 +105,35 @@ fun RouteDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Создано: ${routeDetail.createdAt}",
+                    text = "Создано: $formattedDate",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Маршрут:",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                routeDetail.route.forEach { point ->
-                    Text(
-                        text = "(${point.lat}, ${point.lon})",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    onClick = {
+                        val routePoints = routeDetail.route.joinToString(separator = ";") { "${it.lat},${it.lon}" }
+                        navController.navigate("mapFragment?route=$routePoints")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(text = "Открыть на карте")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
                     )
                 ) {
                     Text(text = "Закрыть")

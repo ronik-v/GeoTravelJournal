@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -24,6 +24,9 @@ import androidx.navigation.NavController
 import com.ronik.geotraveljournal.serializers.Route
 import com.ronik.geotraveljournal.serializers.RouteDetail
 import com.ronik.geotraveljournal.utils.GeoTravelTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun RouteHistoryScreen(
@@ -32,6 +35,14 @@ fun RouteHistoryScreen(
     onRouteClick: (RouteDetail) -> Unit,
     navController: NavController
 ) {
+    val groupedRoutes = routes
+        .map { route ->
+            val dateTime = LocalDateTime.parse(route.createdAt, DateTimeFormatter.ISO_DATE_TIME)
+            val monthYearKey = dateTime.format(DateTimeFormatter.ofPattern("MMMM (yyyy)", Locale("ru")))
+            monthYearKey to route
+        }
+        .groupBy { it.first }
+
     GeoTravelTheme {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             IconButton(
@@ -53,14 +64,22 @@ fun RouteHistoryScreen(
             )
 
             LazyColumn {
-                items(routes) { route ->
-                    RouteItem(
-                        route = route,
-                        onClick = {
+                groupedRoutes.forEach { (monthYear, routes) ->
+                    item {
+                        Text(
+                            text = monthYear.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+                        )
+                    }
+
+                    itemsIndexed(routes) { _, (_, route) ->
+                        RouteItem(route = route, onClick = {
                             val routeDetail = routeDetailsProvider(route)
                             onRouteClick(routeDetail)
-                        }
-                    )
+                        })
+                    }
                 }
             }
         }
@@ -69,6 +88,9 @@ fun RouteHistoryScreen(
 
 @Composable
 fun RouteItem(route: Route, onClick: () -> Unit) {
+    val dateTime = LocalDateTime.parse(route.createdAt, DateTimeFormatter.ISO_DATE_TIME)
+    val formattedDate = dateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
     GeoTravelTheme {
         Card(
             modifier = Modifier
@@ -91,7 +113,7 @@ fun RouteItem(route: Route, onClick: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Создано: ${route.createdAt}",
+                    text = "Создано: $formattedDate",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
