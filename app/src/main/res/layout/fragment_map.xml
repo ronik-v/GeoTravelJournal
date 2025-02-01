@@ -15,7 +15,40 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.0" >
+
+        <ImageButton
+            android:id="@+id/routeButton"
+            style="@style/ButtonStyle"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="408dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="218dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/my_location"
+            android:text="@string/text_current_position"
+            app:tint="@color/colorPrimaryDark" />
+
+        <ImageButton
+            android:id="@+id/mapOverlayButton"
+            style="@style/ButtonStyle"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="339dp"
+            android:layout_marginEnd="17dp"
+            android:layout_marginBottom="291dp"
+            android:src="@drawable/route_history"
+            android:text="@string/text_overlay_button"
+            app:tint="@color/colorPrimaryDark" />
+
+    </com.yandex.mapkit.mapview.MapView>
 
     <Button
         android:id="@+id/trackRouteButton"
@@ -156,29 +189,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
                 android:text="@string/text_search" />
-
-            <Button
-                android:id="@+id/mapOverlayButton"
-                style="@style/ButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:text="@string/text_overlay_button"
-                android:textSize="10sp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                tools:ignore="SmallSp" />
-
-            <ImageButton
-                android:id="@+id/routeButton"
-                android:src="@drawable/my_location"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginBottom="8dp"
-                style="@style/ButtonStyle"
-                android:text="@string/text_current_position"
-                android:importantForAccessibility="no"
-                app:tint="@color/colorPrimaryDark" />
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
