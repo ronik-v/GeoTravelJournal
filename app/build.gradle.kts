@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android") version "1.9.10" // Используем стабильную версию Kotlin
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+    id("kotlin-parcelize")
 }
 
 android {

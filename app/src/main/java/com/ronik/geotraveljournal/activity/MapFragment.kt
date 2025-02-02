@@ -227,35 +227,40 @@ class MapFragment : Fragment() {
     }
 
     private fun showRouteFromHistory() {
-        if (mapView != null) {
-            val routeString = arguments?.getString("route")
-            Log.d("MapFragment", "Получен маршрут: $routeString")
+        val routeString = arguments?.getString("route")
+        Log.d("MapFragment", "Получен маршрут: $routeString")
 
-            val routePoints = routeString?.split(";")?.mapNotNull { pointStr ->
-                val coords = pointStr.split(",")
-                if (coords.size == 2) {
-                    try {
-                        Point(coords[0].toDouble(), coords[1].toDouble())
-                    } catch (e: NumberFormatException) {
-                        Log.e("MapFragment", "Ошибка парсинга координат: $pointStr", e)
-                        null
-                    }
-                } else null
-            } ?: emptyList()
+        val routePoints = routeString?.split(";")?.mapNotNull { pointStr ->
+            val coords = pointStr.split(",")
+            if (coords.size == 2) {
+                try {
+                    val lat = coords[0].toDouble()
+                    val lon = coords[1].toDouble()
+                    Point(lat, lon)
+                } catch (e: NumberFormatException) {
+                    Log.e("MapFragment", "Ошибка парсинга координат: $pointStr", e)
+                    null
+                }
+            } else null
+        } ?: emptyList()
 
-            if (routePoints.isNotEmpty()) {
-                Log.d("MapFragment", "Отображение маршрута с ${routePoints.size} точками")
+        if (routePoints.isNotEmpty()) {
+            Log.d("MapFragment", "Отображение маршрута с ${routePoints.size} точками")
 
-                val polyline = mapView.map.mapObjects.addPolyline(Polyline(routePoints))
-                polyline.setStrokeColor(Color.BLUE)
-                polyline.strokeWidth = 5f
+            val polyline = mapView.map.mapObjects.addPolyline(Polyline(routePoints))
+            polyline.setStrokeColor(Color.BLUE)
+            polyline.strokeWidth = 5f
 
-                mapView.map.move(CameraPosition(routePoints.first(), 10f, 0f, 0f))
-            } else {
-                Log.w("MapFragment", "Маршрут пуст или некорректен")
-            }
+            val cameraPosition = CameraPosition(
+                routePoints.first(),
+                10f,
+                0f,
+                0f
+            )
+            mapView.map.move(cameraPosition)
+
         } else {
-            Log.e("MapFragment", "mapView is null")
+            Log.w("MapFragment", "Маршрут пуст или некорректен")
         }
     }
 
