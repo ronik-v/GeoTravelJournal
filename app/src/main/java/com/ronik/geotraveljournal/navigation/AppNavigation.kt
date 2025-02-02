@@ -112,18 +112,8 @@ fun AppNavigation() {
             )
         }
         composable("mapFragment") {
-            MapFragmentScreen()
-        }
-
-        composable("mapFragment?route={route}") { backStackEntry ->
-            val route = backStackEntry.arguments?.getString("route")
-            route?.let {
-                val routePoints = it.split(";").map { point ->
-                    val (lat, lon) = point.split(",")
-                    RoutePoint(lat.toDouble(), lon.toDouble())
-                }
-                MapFragmentScreen(routePoints)
-            }
+            val route = navController.previousBackStackEntry?.arguments?.getString("route")
+            MapFragmentScreen(route)
         }
     }
 

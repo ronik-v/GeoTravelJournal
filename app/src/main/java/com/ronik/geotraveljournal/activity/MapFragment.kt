@@ -227,7 +227,7 @@ class MapFragment : Fragment() {
     }
 
     private fun showRouteFromHistory() {
-        val routeString = arguments?.getString("route")
+        val routeString = requireActivity().intent.getStringExtra("route")
         Log.d("MapFragment", "Получен маршрут: $routeString")
 
         val routePoints = routeString?.split(";")?.mapNotNull { pointStr ->

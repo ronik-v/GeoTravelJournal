@@ -1,5 +1,6 @@
 package com.ronik.geotraveljournal.activity
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentTransaction
@@ -24,4 +25,11 @@ class MainActivity : AppCompatActivity() {
             fragmentTransaction.commit()
         }
     }
+
+    fun openMapWithRoute(route: String) {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("route", route)
+        startActivity(intent)
+    }
 }
+
