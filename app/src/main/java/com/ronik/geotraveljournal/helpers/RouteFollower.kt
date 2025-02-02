@@ -15,6 +15,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.ronik.geotraveljournal.R
+import com.yandex.mapkit.Animation
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.PolylineMapObject
@@ -152,7 +153,7 @@ class RouteFollower(
         val nextPoint = routePoints.find { it != location } ?: return
         val azimuth = calculateAzimuth(location, nextPoint)
 
-        mapView.map.move(CameraPosition(location, 14f, azimuth, 0f))
+        updateCameraView(location, azimuth)
     }
 
     private fun calculateAzimuth(from: Point, to: Point): Float {
@@ -161,8 +162,25 @@ class RouteFollower(
         return Math.toDegrees(atan2(deltaY, deltaX)).toFloat()
     }
 
+    private fun updateCameraView(location: Point, azimuth: Float) {
+        mapView.map.move(
+            CameraPosition(location, 14f, azimuth, 0f),
+            Animation(Animation.Type.SMOOTH, 0.5f),
+            null
+        )
+    }
+
+    private fun getRotatedBitmap(source: Bitmap, angle: Float): Bitmap {
+        val matrix = android.graphics.Matrix()
+        matrix.postRotate(angle)
+        return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+    }
+
     private fun rotateMarker(azimuth: Float) {
-        marker.direction = azimuth
+        val rotatedBitmap = getRotatedBitmap(getBitmapFromVectorDrawable(context, R.drawable.navigator), azimuth)
+        marker.setIcon(ImageProvider.fromBitmap(rotatedBitmap))
+
+        updateCameraView(marker.geometry, azimuth)
     }
 
     private fun startGyroscope() = routeGyroscope.startListening()
@@ -182,8 +200,27 @@ class RouteFollower(
     }
 
     fun clearData() {
-        marker.let { if (it.isValid) mapView.map.mapObjects.remove(it) }
-        routeLine?.let { mapView.map.mapObjects.remove(it) }
+        marker?.let {
+            if (it.isValid) {
+                try {
+                    mapView.map.mapObjects.remove(it)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        routeLine?.let {
+            if (it.isValid) {
+                try {
+                    mapView.map.mapObjects.remove(it)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
         routeLine = null
     }
+
 }

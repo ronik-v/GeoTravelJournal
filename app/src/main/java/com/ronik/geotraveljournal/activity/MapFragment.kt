@@ -369,6 +369,8 @@ class MapFragment : Fragment() {
         startPoint = null
         endPoint = null
         userPlacemark = null
+
+        routeFollower?.clearData()
     }
 
     private fun fetchSuggestions(query: String) {
