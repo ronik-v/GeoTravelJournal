@@ -165,7 +165,7 @@ class RouteFollower(
     private fun updateCameraView(location: Point, azimuth: Float) {
         mapView.map.move(
             CameraPosition(location, 14f, azimuth, 0f),
-            Animation(Animation.Type.SMOOTH, 0.5f),
+            Animation(Animation.Type.SMOOTH, 0.75f),
             null
         )
     }
