@@ -80,7 +80,6 @@ class RouteFollower(
         if (!checkLocationPermissions()) {
             throw SecurityException("Location permission not granted")
         }
-
         startGyroscope()
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
@@ -179,7 +178,6 @@ class RouteFollower(
     private fun rotateMarker(azimuth: Float) {
         val rotatedBitmap = getRotatedBitmap(getBitmapFromVectorDrawable(context, R.drawable.navigator), azimuth)
         marker.setIcon(ImageProvider.fromBitmap(rotatedBitmap))
-
         updateCameraView(marker.geometry, azimuth)
     }
 

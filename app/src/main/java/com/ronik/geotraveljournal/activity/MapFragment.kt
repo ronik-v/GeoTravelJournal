@@ -458,7 +458,6 @@ class MapFragment : Fragment() {
                         routeObjects.add(routePolyline)
                         currentRoute = route
 
-                        trackRouteButton.visibility = View.VISIBLE
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }
