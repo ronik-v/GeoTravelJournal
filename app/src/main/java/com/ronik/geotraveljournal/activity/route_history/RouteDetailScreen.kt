@@ -1,8 +1,5 @@
 package com.ronik.geotraveljournal.activity.route_history
 
-import android.content.Intent
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.ronik.geotraveljournal.activity.MainActivity
 import com.ronik.geotraveljournal.serializers.RouteDetail
 import com.ronik.geotraveljournal.utils.GeoTravelTheme
 import java.time.LocalDateTime
@@ -83,14 +79,10 @@ fun RouteDetailScreen(
 
                 Button(
                     onClick = {
-                        val handler = Handler(Looper.getMainLooper())
-                        handler.postDelayed({
-                            val routePoints = routeDetail.route.joinToString(";") { "${it.lat},${it.lon}" }
-                            val intent = Intent(context, MainActivity::class.java).apply {
-                                putExtra("route", routePoints)
-                            }
-                            context.startActivity(intent)
-                        }, 500)
+                        val routePoints = routeDetail.route.joinToString(";") { "${it.lat},${it.lon}" }
+                        val encodedRoute = java.net.URLEncoder.encode(routePoints, "UTF-8")
+                        onDismiss()
+                        navController.navigate("mapFragment/$encodedRoute")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

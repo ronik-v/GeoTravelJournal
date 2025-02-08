@@ -111,9 +111,9 @@ fun AppNavigation() {
                 navController = navController
             )
         }
-        composable("mapFragment") {
-            val route = navController.previousBackStackEntry?.arguments?.getString("route")
-            MapFragmentScreen(route)
+        composable("mapFragment/{routePoints}") { backStackEntry ->
+            val routePoints = backStackEntry.arguments?.getString("routePoints")
+            MapFragmentScreen(routePoints)
         }
     }
 

@@ -86,6 +86,7 @@ class MapFragment : Fragment() {
     private var startPoint: Point? = null
     private var endPoint: Point? = null
     private var placemarks = mutableListOf<PlacemarkMapObject>()
+    private var historyRoute: PolylineMapObject? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -223,44 +224,35 @@ class MapFragment : Fragment() {
             mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
         }
 
-        showRouteFromHistory()
+        val route = arguments?.getString("route")
+        showRouteFromHistory(route)
     }
 
-    private fun showRouteFromHistory() {
-        val routeString = requireActivity().intent.getStringExtra("route")
-        Log.d("MapFragment", "Получен маршрут: $routeString")
-
-        val routePoints = routeString?.split(";")?.mapNotNull { pointStr ->
-            val coords = pointStr.split(",")
-            if (coords.size == 2) {
-                try {
-                    val lat = coords[0].toDouble()
-                    val lon = coords[1].toDouble()
-                    Point(lat, lon)
-                } catch (e: NumberFormatException) {
-                    Log.e("MapFragment", "Ошибка парсинга координат: $pointStr", e)
-                    null
+    private fun showRouteFromHistory(route: String?) {
+        if (!route.isNullOrEmpty()) {
+            val decodedRoute = java.net.URLDecoder.decode(route, "UTF-8")
+            val routePoints = decodedRoute.split(";").mapNotNull { pointStr ->
+                val coords = pointStr.split(",")
+                if (coords.size == 2) {
+                    try {
+                        val lat = coords[0].toDouble()
+                        val lon = coords[1].toDouble()
+                        Point(lat, lon)
+                    } catch (e: NumberFormatException) {
+                        null
+                    }
+                } else null
+            }
+            if (routePoints.isNotEmpty()) {
+                historyRoute?.let { mapView.map.mapObjects.remove(it) }
+                historyRoute = mapView.map.mapObjects.addPolyline(Polyline(routePoints)).apply {
+                    setStrokeColor(Color.BLUE)
+                    strokeWidth = 5f
                 }
-            } else null
-        } ?: emptyList()
 
-        if (routePoints.isNotEmpty()) {
-            Log.d("MapFragment", "Отображение маршрута с ${routePoints.size} точками")
-
-            val polyline = mapView.map.mapObjects.addPolyline(Polyline(routePoints))
-            polyline.setStrokeColor(Color.BLUE)
-            polyline.strokeWidth = 5f
-
-            val cameraPosition = CameraPosition(
-                routePoints.first(),
-                10f,
-                0f,
-                0f
-            )
-            mapView.map.move(cameraPosition)
-
-        } else {
-            Log.w("MapFragment", "Маршрут пуст или некорректен")
+                val cameraPosition = CameraPosition(routePoints.first(), 10f, 0f, 0f)
+                mapView.map.move(cameraPosition)
+            }
         }
     }
 
@@ -376,6 +368,10 @@ class MapFragment : Fragment() {
         userPlacemark = null
 
         routeFollower?.clearData()
+        historyRoute?.let {
+            mapView.map.mapObjects.remove(it)
+            historyRoute = null
+        }
     }
 
     private fun fetchSuggestions(query: String) {
