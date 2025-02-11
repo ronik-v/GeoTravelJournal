@@ -175,6 +175,8 @@ class MapFragment : Fragment() {
             val query = searchAutoComplete.text.toString()
             if (query.isNotEmpty()) {
                 searchLocation(query)
+
+                trackRouteButton.visibility = View.VISIBLE
             } else {
                 Toast.makeText(mapView.context, "Введите адрес для поиска", Toast.LENGTH_SHORT).show()
             }
