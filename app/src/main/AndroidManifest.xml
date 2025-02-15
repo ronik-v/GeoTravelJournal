@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:forceDarkAllowed="false"
         android:enableOnBackInvokedCallback="true"
@@ -21,6 +22,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:targetApi="tiramisu" >
+
         <activity
             android:name=".activity.MainActivity"
             android:windowSoftInputMode="adjustResize"
@@ -34,7 +36,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.route_history.RouteHistoryActivity"
+        <activity android:name=".activity.journal.RouteHistoryActivity"
             android:exported="true" />
     </application>
 

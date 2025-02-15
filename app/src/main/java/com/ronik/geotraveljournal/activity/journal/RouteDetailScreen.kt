@@ -1,5 +1,6 @@
-package com.ronik.geotraveljournal.activity.route_history
+package com.ronik.geotraveljournal.activity.journal
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,7 @@ fun RouteDetailScreen(
     val formattedDate = LocalDateTime.parse(routeDetail.createdAt, DateTimeFormatter.ISO_DATE_TIME)
         .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
 
-    val context = LocalContext.current // Запоминаем контекст
+    val context = LocalContext.current
 
     GeoTravelTheme {
         ModalBottomSheet(
@@ -50,7 +51,7 @@ fun RouteDetailScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxHeight(0.5f)
+                    .fillMaxHeight(0.8f)
                     .padding(16.dp)
                     .background(MaterialTheme.colorScheme.background)
             ) {
@@ -81,8 +82,9 @@ fun RouteDetailScreen(
                     onClick = {
                         val routePoints = routeDetail.route.joinToString(";") { "${it.lat},${it.lon}" }
                         val encodedRoute = java.net.URLEncoder.encode(routePoints, "UTF-8")
-                        onDismiss()
-                        navController.navigate("mapFragment/$encodedRoute")
+                        Log.d("ROUTE", "route = $encodedRoute")
+                        //onDismiss()
+                        navController.navigate("mapFragment?routePoints=$encodedRoute")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

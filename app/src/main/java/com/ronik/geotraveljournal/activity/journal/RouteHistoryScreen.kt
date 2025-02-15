@@ -1,4 +1,4 @@
-package com.ronik.geotraveljournal.activity.route_history
+package com.ronik.geotraveljournal.activity.journal
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

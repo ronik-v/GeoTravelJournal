@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.ronik.geotraveljournal.Config
 import com.ronik.geotraveljournal.R
-import com.ronik.geotraveljournal.activity.route_history.RouteHistoryActivity
+import com.ronik.geotraveljournal.activity.journal.RouteHistoryActivity
 import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
 import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.helpers.RouteFollower
@@ -226,7 +226,8 @@ class MapFragment : Fragment() {
             mapView.map.move(CameraPosition(coordinates, 17.0f, 150.0f, 30.0f))
         }
 
-        val route = arguments?.getString("route")
+        val route = arguments?.getString("routePoints")
+        Log.d("ROUTE MAP FRAGMENT", "route = $route")
         showRouteFromHistory(route)
     }
 
