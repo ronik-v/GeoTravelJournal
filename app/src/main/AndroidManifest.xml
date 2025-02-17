@@ -11,6 +11,7 @@
 
     <application
         android:name=".App"
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:forceDarkAllowed="false"
         android:enableOnBackInvokedCallback="true"

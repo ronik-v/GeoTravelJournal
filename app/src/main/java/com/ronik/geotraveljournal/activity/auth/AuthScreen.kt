@@ -1,5 +1,6 @@
 package com.ronik.geotraveljournal.activity.auth
 
+import android.app.Application
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,12 +16,15 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,15 +38,44 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.ronik.geotraveljournal.network.RetrofitClient
+import com.ronik.geotraveljournal.repository.AuthRepository
+import com.ronik.geotraveljournal.viewmodel.AuthState
+import com.ronik.geotraveljournal.viewmodel.AuthViewModel
 
 @Composable
 fun AuthScreen(navController: NavController) {
     val context = LocalContext.current
 
+    val apiService = RetrofitClient.getApiService(context) { null }
+    val authRepository = AuthRepository(context, apiService)
+    val authViewModel = remember {
+        AuthViewModel(context.applicationContext as Application, authRepository)
+    }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var localErrorMessage by remember { mutableStateOf("") }
+
+    val authState by authViewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Error -> {
+                localErrorMessage = (authState as AuthState.Error).message
+            }
+            AuthState.LoginSuccess -> {
+                navController.navigate("mapFragment") {
+                    popUpTo("auth") { inclusive = true }
+                }
+            }
+            AuthState.RegisterSuccess -> {
+                localErrorMessage = "Регистрация прошла успешно!"
+            }
+            else -> { /* Idle, Loading – ничего не делаем */ }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -81,35 +114,59 @@ fun AuthScreen(navController: NavController) {
                     label = { Text("Пароль") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None
+                    else
+                        PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль"
+                                imageVector = if (passwordVisible)
+                                    Icons.Default.Visibility
+                                else
+                                    Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible)
+                                    "Скрыть пароль"
+                                else
+                                    "Показать пароль"
                             )
                         }
                     }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                if (errorMessage.isNotEmpty()) {
-                    Text(text = errorMessage, color = Color.Red)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                Button(
-                    onClick = {
-                        if (email.trim() == "example@gmail.com" && password == "password") {
-                            navController.navigate("mapFragment") {
-                                popUpTo("auth") { inclusive = true }
+                if (authState == AuthState.Loading) {
+                    CircularProgressIndicator()
+                } else {
+                    if (localErrorMessage.isNotEmpty()) {
+                        Text(text = localErrorMessage, color = Color.Red)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Button(
+                        onClick = {
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.login(email.trim(), password.trim())
+                            } else {
+                                localErrorMessage = "Заполните все поля"
                             }
-                        } else {
-                            errorMessage = "Неверные учетные данные"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Войти")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Войти")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.register(email.trim(), password.trim())
+                            } else {
+                                localErrorMessage = "Заполните все поля"
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Зарегистрироваться")
+                    }
                 }
             }
         }
