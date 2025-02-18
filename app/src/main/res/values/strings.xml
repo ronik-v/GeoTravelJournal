@@ -10,4 +10,6 @@
     <string name="text_create_custom_route">Создать маршрут по точкам</string>
     <string name="track_route">Поехали!</string>
     <string name="text_overlay_button">История маршрутов</string>
+    <string name="input_route_text_title">Введите заголовок маршрута</string>
+    <string name="input_route_text_description">Введите описание маршрута</string>
 </resources>

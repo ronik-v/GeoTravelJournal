@@ -18,6 +18,23 @@
         app:layout_constraintVertical_bias="0.0" >
 
         <ImageButton
+            android:id="@+id/saveRouteButton"
+            style="@style/ButtonStyle"
+            android:layout_width="59dp"
+            android:layout_height="63dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="492dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginBottom="120dp"
+            android:background="@drawable/square_button"
+            android:src="@drawable/add_route"
+            android:visibility="gone"
+            app:tint="@color/colorPrimaryDark" />
+
+        <ImageButton
             android:id="@+id/routeButton"
             style="@style/ButtonStyle"
             android:layout_width="59dp"

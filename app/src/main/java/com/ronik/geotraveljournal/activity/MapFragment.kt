@@ -13,18 +13,25 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.ronik.geotraveljournal.Config
 import com.ronik.geotraveljournal.R
 import com.ronik.geotraveljournal.activity.journal.RouteHistoryActivity
 import com.ronik.geotraveljournal.adapter.SearchAddressFilterAdapter
+import com.ronik.geotraveljournal.data.TokenManager
 import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.helpers.RouteFollower
+import com.ronik.geotraveljournal.network.JournalCreateEntry
+import com.ronik.geotraveljournal.network.RetrofitClient
+import com.ronik.geotraveljournal.repository.JournalRepository
+import com.ronik.geotraveljournal.viewmodel.RouteViewModel
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
@@ -40,7 +47,6 @@ import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.InputListener
-import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
@@ -53,6 +59,11 @@ import com.yandex.mapkit.search.SearchManagerType
 import com.yandex.mapkit.search.SearchOptions
 import com.yandex.mapkit.search.Session
 import com.yandex.runtime.image.ImageProvider
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.Locale
+import com.yandex.mapkit.map.Map as YandexMap
 
 class MapFragment : Fragment() {
     private lateinit var mapView: MapView
@@ -69,6 +80,7 @@ class MapFragment : Fragment() {
     private lateinit var buildPointsButton: ImageButton
     private lateinit var trackRouteButton: Button
     private lateinit var mapOverlayButton: ImageButton
+    private lateinit var saveRouteButton: ImageButton
     private lateinit var location: Location
     private var routeFollower: RouteFollower? = null
     private var currentRoute: DrivingRoute? = null
@@ -87,6 +99,14 @@ class MapFragment : Fragment() {
     private var endPoint: Point? = null
     private var placemarks = mutableListOf<PlacemarkMapObject>()
     private var historyRoute: PolylineMapObject? = null
+    private val routeViewModel: RouteViewModel by lazy {
+        val tokenProvider: () -> String? = { runBlocking { TokenManager.getTokenFlow(requireContext()).first() } }
+
+        val apiService = RetrofitClient.getApiService(requireContext(), tokenProvider)
+        val repository = JournalRepository(requireContext(), apiService)
+        RouteViewModel(repository)
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -105,6 +125,7 @@ class MapFragment : Fragment() {
         buildPointsButton = rootView.findViewById(R.id.buildPointsButton)
         trackRouteButton = rootView.findViewById(R.id.trackRouteButton)
         mapOverlayButton =  rootView.findViewById(R.id.mapOverlayButton)
+        saveRouteButton = rootView.findViewById(R.id.saveRouteButton)
 
         suggestionsAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_dropdown_item_1line, suggestionList
@@ -203,6 +224,7 @@ class MapFragment : Fragment() {
 
             routeFollower = null
             trackRouteButton.visibility = View.GONE
+            saveRouteButton.visibility = View.GONE
         }
 
         buildPointsButton.setOnClickListener {
@@ -213,6 +235,58 @@ class MapFragment : Fragment() {
         trackRouteButton.setOnClickListener {
             currentRoute?.let { it1 -> startTrackingRoute(it1) }
             trackRouteButton.visibility = View.GONE
+            saveRouteButton.visibility = View.VISIBLE
+        }
+
+        // TODO: need refactoring
+        saveRouteButton.setOnClickListener {
+            currentRoute?.let { route ->
+                val dialogView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.dialog_save_route, null)
+                val titleEditText = dialogView.findViewById<EditText>(R.id.editTitle)
+                val descriptionEditText = dialogView.findViewById<EditText>(R.id.editDescription)
+
+                val alertDialog = AlertDialog.Builder(requireContext())
+                    .setTitle("Сохранить маршрут")
+                    .setView(dialogView)
+                    .setPositiveButton("Сохранить") { _, _ ->
+                        val title = titleEditText.text.toString().trim()
+                        val description = descriptionEditText.text.toString().trim()
+
+                        val distanceMeters = route.metadata?.weight?.distance?.value ?: 0.0
+                        val distanceKm = distanceMeters / 1000.0
+                        val formattedDistance = String.format(Locale.US, "%.2f", distanceKm).toDouble()
+
+                        val routePoints: List<Map<String, String>> =
+                            route.geometry.points.map { point ->
+                                mapOf("lat" to point.latitude.toString(), "lon" to point.longitude.toString())
+                            }
+                        val journalEntry = JournalCreateEntry(
+                            title = title,
+                            description = description,
+                            distance = formattedDistance,
+                            route = routePoints
+                        )
+
+                        lifecycleScope.launch {
+                            try {
+                                routeViewModel.addJournal(journalEntry)
+                                Toast.makeText(requireContext(), "Маршрут сохранён", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(requireContext(), "Ошибка сохранения: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Отмена", null)
+                    .show()
+
+                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    ?.setTextAppearance(requireContext(), R.style.ButtonStyle)
+                alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                    ?.setTextAppearance(requireContext(), R.style.ButtonStyle)
+            } ?: run {
+                Toast.makeText(requireContext(), "Нет маршрута для сохранения", Toast.LENGTH_SHORT).show()
+            }
         }
 
         val imageProvider = ImageProvider.fromResource(mapView.context, R.drawable.ic_pin)
@@ -260,7 +334,7 @@ class MapFragment : Fragment() {
     }
 
     private val inputListener = object : InputListener {
-        override fun onMapTap(map: Map, point: Point) {
+        override fun onMapTap(map: YandexMap, point: Point) {
             if (startPoint == null) {
                 startPoint = point
                 val startPlacemark = mapView.map.mapObjects.addPlacemark(point).apply {
@@ -278,7 +352,7 @@ class MapFragment : Fragment() {
             }
         }
 
-        override fun onMapLongTap(map: Map, point: Point) {}
+        override fun onMapLongTap(map: YandexMap, point: Point) {}
     }
 
     private fun startTrackingRoute(currentRoute: DrivingRoute) {
