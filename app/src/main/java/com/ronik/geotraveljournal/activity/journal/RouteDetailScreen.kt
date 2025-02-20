@@ -38,7 +38,7 @@ import androidx.navigation.NavController
 import com.ronik.geotraveljournal.network.JournalUpdateEntry
 import com.ronik.geotraveljournal.utils.GeoTravelTheme
 import com.ronik.geotraveljournal.utils.toRouteDetail
-import com.ronik.geotraveljournal.viewmodel.RouteViewModel
+import com.ronik.geotraveljournal.viewmodel.JournalViewModel
 import java.net.URLEncoder
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -47,7 +47,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun RouteDetailScreen(
     routeId: Long,
-    viewModel: RouteViewModel,
+    viewModel: JournalViewModel,
     onDismiss: () -> Unit,
     navController: NavController
 ) {

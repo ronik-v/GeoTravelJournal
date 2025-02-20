@@ -30,8 +30,11 @@ import com.ronik.geotraveljournal.helpers.Location
 import com.ronik.geotraveljournal.helpers.RouteFollower
 import com.ronik.geotraveljournal.network.JournalCreateEntry
 import com.ronik.geotraveljournal.network.RetrofitClient
+import com.ronik.geotraveljournal.network.RoutesForChange
+import com.ronik.geotraveljournal.repository.ChangeRoutesRepository
 import com.ronik.geotraveljournal.repository.JournalRepository
-import com.ronik.geotraveljournal.viewmodel.RouteViewModel
+import com.ronik.geotraveljournal.viewmodel.ChangeRoutesViewModel
+import com.ronik.geotraveljournal.viewmodel.JournalViewModel
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
@@ -99,12 +102,20 @@ class MapFragment : Fragment() {
     private var endPoint: Point? = null
     private var placemarks = mutableListOf<PlacemarkMapObject>()
     private var historyRoute: PolylineMapObject? = null
-    private val routeViewModel: RouteViewModel by lazy {
+    private val journalViewModel: JournalViewModel by lazy {
         val tokenProvider: () -> String? = { runBlocking { TokenManager.getTokenFlow(requireContext()).first() } }
 
         val apiService = RetrofitClient.getApiService(requireContext(), tokenProvider)
         val repository = JournalRepository(requireContext(), apiService)
-        RouteViewModel(repository)
+        JournalViewModel(repository)
+    }
+
+    private val routeViewModel: ChangeRoutesViewModel by lazy {
+        val tokenProvider: () -> String? = { runBlocking { TokenManager.getTokenFlow(requireContext()).first() } }
+
+        val apiService = RetrofitClient.getApiService(requireContext(), tokenProvider)
+        val repository = ChangeRoutesRepository(requireContext(), apiService)
+        ChangeRoutesViewModel(repository)
     }
 
 
@@ -270,7 +281,7 @@ class MapFragment : Fragment() {
 
                         lifecycleScope.launch {
                             try {
-                                routeViewModel.addJournal(journalEntry)
+                                journalViewModel.addJournal(journalEntry)
                                 Toast.makeText(requireContext(), "Маршрут сохранён", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Toast.makeText(requireContext(), "Ошибка сохранения: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -515,6 +526,8 @@ class MapFragment : Fragment() {
         location.current { userLocation ->
             moveToUserLocation(userLocation)
 
+            val currentUserLocation = userLocation
+
             val requestPoints = listOf(
                 RequestPoint(userLocation, RequestPointType.WAYPOINT, null, null),
                 RequestPoint(destination, RequestPointType.WAYPOINT, null, null)
@@ -525,12 +538,41 @@ class MapFragment : Fragment() {
             val drivingRouteListener = object : DrivingSession.DrivingRouteListener {
                 override fun onDrivingRoutes(routes: List<DrivingRoute>) {
                     if (routes.isNotEmpty()) {
-                        val route = routes[0]
+                        val routesMap = mutableMapOf<String, List<com.ronik.geotraveljournal.network.Point>>()
+                        routes.forEachIndexed { index, _ ->
+                            routesMap[index.toString()] = listOf(
+                                com.ronik.geotraveljournal.network.Point(
+                                    latitude = userLocation.latitude,
+                                    longitude = userLocation.longitude
+                                ),
+                                com.ronik.geotraveljournal.network.Point(
+                                    latitude = destination.latitude,
+                                    longitude = destination.longitude
+                                )
+                            )
+                        }
 
-                        val routePolyline = mapView.map.mapObjects.addPolyline(route.geometry)
-                        routeObjects.add(routePolyline)
-                        currentRoute = route
+                        val routesForChange = RoutesForChange(
+                            routes = routesMap,
+                            userCoordinates = com.ronik.geotraveljournal.network.Point(
+                                latitude = currentUserLocation.latitude,
+                                longitude = currentUserLocation.longitude
+                            )
+                        )
 
+                        lifecycleScope.launch {
+                            val selectedRouteIndex: String = try {
+                                routeViewModel.changeRoute(routesForChange).route
+                            } catch (e: Exception) {
+                                "0"
+                            }
+                            val index = selectedRouteIndex.toIntOrNull() ?: 0
+                            val selectedRoute = routes.getOrNull(index) ?: routes[0]
+
+                            val routePolyline = mapView.map.mapObjects.addPolyline(selectedRoute.geometry)
+                            routeObjects.add(routePolyline)
+                            currentRoute = selectedRoute
+                        }
                     } else {
                         Toast.makeText(mapView.context, "Маршруты не найдены", Toast.LENGTH_SHORT).show()
                     }

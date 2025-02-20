@@ -39,7 +39,7 @@ import androidx.navigation.NavController
 import com.ronik.geotraveljournal.serializers.Route
 import com.ronik.geotraveljournal.utils.GeoTravelTheme
 import com.ronik.geotraveljournal.utils.toRoute
-import com.ronik.geotraveljournal.viewmodel.RouteViewModel
+import com.ronik.geotraveljournal.viewmodel.JournalViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -47,7 +47,7 @@ import java.util.Locale
 
 @Composable
 fun RouteHistoryScreen(
-    viewModel: RouteViewModel,
+    viewModel: JournalViewModel,
     onRouteClick: (Long) -> Unit,
     navController: NavController
 ) {

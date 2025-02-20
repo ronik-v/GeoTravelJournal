@@ -65,6 +65,19 @@ data class JournalDetailEntry(
     val updatedAt: String
 )
 
+data class Point(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class RoutesForChange(
+    val routes: Map<String, List<Point>>,
+    val userCoordinates: Point
+)
+
+data class RouteForChange(
+    val route: String
+)
 
 interface ApiService {
     @POST("api/auth/register")
@@ -109,4 +122,10 @@ interface ApiService {
     suspend fun clearHistory(
         @Header("Authorization") token: String
     ): ApiResponse<String>
+
+    @POST("api/change-route")
+    suspend fun changeRoute(
+        @Header("Authorization") token: String,
+        @Body routes: RoutesForChange
+    ): ApiResponse<RouteForChange>
 }

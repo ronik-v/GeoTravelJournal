@@ -9,11 +9,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ronik.geotraveljournal.activity.journal.RouteDetailScreen
 import com.ronik.geotraveljournal.activity.journal.RouteHistoryScreen
-import com.ronik.geotraveljournal.viewmodel.RouteViewModel
+import com.ronik.geotraveljournal.viewmodel.JournalViewModel
 
 @Composable
 fun RouteHistoryNav(
-    viewModel: RouteViewModel
+    viewModel: JournalViewModel
 ) {
     val navController = rememberNavController()
 

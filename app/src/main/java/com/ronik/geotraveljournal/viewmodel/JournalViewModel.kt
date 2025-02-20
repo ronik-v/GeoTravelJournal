@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class RouteViewModel(
+class JournalViewModel(
     private val repository: JournalRepository
 ) : ViewModel() {
 
