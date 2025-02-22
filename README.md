@@ -25,7 +25,7 @@ A mobile application for Android featuring Yandex Map integration, custom route 
 
 ## Technologies Used
 
-- **Android Development:** Java/Kotlin  
+- **Android Development:** Kotlin  
 - **Map Integration:** Yandex Map SDK  
 - **Geolocation:** Google Geolocation API  
 - **Backend Communication:** RESTful API (for route history management)  
@@ -37,7 +37,7 @@ A mobile application for Android featuring Yandex Map integration, custom route 
 
 1. **Clone the Repository:**  
    ```bash
-   git clone https://github.com/your-repo
+   git clone https://github.com/ronik-v/GeoTravelJournal.git
 2. **Open in Android Studio:**  
    Import the project into Android Studio.
 
