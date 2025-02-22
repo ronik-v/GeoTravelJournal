@@ -1,6 +1,7 @@
 package com.ronik.geotraveljournal.activity.auth
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -80,13 +82,25 @@ fun AuthScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                )
+            )
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.9f)
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -96,7 +110,8 @@ fun AuthScreen(navController: NavController) {
             ) {
                 Text(
                     text = "Авторизация / Регистрация",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
@@ -105,7 +120,8 @@ fun AuthScreen(navController: NavController) {
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -129,17 +145,23 @@ fun AuthScreen(navController: NavController) {
                                 contentDescription = if (passwordVisible)
                                     "Скрыть пароль"
                                 else
-                                    "Показать пароль"
+                                    "Показать пароль",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                    }
+                    },
+                    shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 if (authState == AuthState.Loading) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 } else {
                     if (localErrorMessage.isNotEmpty()) {
-                        Text(text = localErrorMessage, color = Color.Red)
+                        Text(
+                            text = localErrorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     Button(
@@ -150,9 +172,16 @@ fun AuthScreen(navController: NavController) {
                                 localErrorMessage = "Заполните все поля"
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
-                        Text("Войти")
+                        Text(
+                            "Войти",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
@@ -163,9 +192,16 @@ fun AuthScreen(navController: NavController) {
                                 localErrorMessage = "Заполните все поля"
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
-                        Text("Зарегистрироваться")
+                        Text(
+                            "Зарегистрироваться",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             }
