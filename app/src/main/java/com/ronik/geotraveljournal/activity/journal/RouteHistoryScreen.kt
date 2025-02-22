@@ -1,5 +1,6 @@
 package com.ronik.geotraveljournal.activity.journal
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,10 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -34,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ronik.geotraveljournal.serializers.Route
@@ -95,73 +100,86 @@ fun RouteHistoryScreen(
     }
 
     GeoTravelTheme {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFE6F5E5),
+                            Color(0xFFF0FAF0)
+                        )
+                    )
+                )
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                IconButton(
-                    onClick = { navController.navigate("mapFragment") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Назад",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                IconButton(
-                    onClick = { viewModel.clearHistory() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Удалить всю историю",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.padding(8.dp))
-
-            Text(
-                text = "История маршрутов",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(8.dp),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            if (routes.isEmpty()) {
-                EmptyRoutesPlaceholder(modifier = Modifier.fillMaxSize())
-            } else {
-                LazyColumn(state = listState) {
-                    groupedRoutes.forEach { (monthYear, routePairs) ->
-                        item {
-                            Text(
-                                text = monthYear.replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
-                            )
-                        }
-                        itemsIndexed(routePairs) { _, (_, route) ->
-                            RouteItem(route = route.toRoute(), onClick = {
-                                onRouteClick(route.id)
-                            })
-                        }
+                    IconButton(
+                        onClick = { navController.navigate("mapFragment") }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
                     }
-                    if (isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
+                    IconButton(
+                        onClick = { viewModel.clearHistory() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Удалить всю историю",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "История маршрутов",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(8.dp),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                if (routes.isEmpty()) {
+                    EmptyRoutesPlaceholder(modifier = Modifier.fillMaxSize())
+                } else {
+                    LazyColumn(state = listState) {
+                        groupedRoutes.forEach { (monthYear, routePairs) ->
+                            item {
+                                Text(
+                                    text = monthYear.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+                                )
+                            }
+                            itemsIndexed(routePairs) { _, (_, route) ->
+                                RouteItem(route = route.toRoute(), onClick = {
+                                    onRouteClick(route.id)
+                                })
+                            }
+                        }
+                        if (isLoading) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
@@ -185,9 +203,13 @@ fun RouteItem(route: Route, onClick: () -> Unit) {
                 .fillMaxWidth()
                 .padding(8.dp)
                 .clickable { onClick() },
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+                MaterialTheme.colorScheme.primary,
+                MaterialTheme.colorScheme.primaryContainer,
+                MaterialTheme.colorScheme.secondary
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -199,7 +221,7 @@ fun RouteItem(route: Route, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.padding(vertical = 4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Создано: $formattedDate",
                     style = MaterialTheme.typography.bodyMedium,

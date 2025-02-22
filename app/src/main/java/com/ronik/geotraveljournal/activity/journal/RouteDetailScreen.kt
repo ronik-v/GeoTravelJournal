@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ronik.geotraveljournal.network.JournalUpdateEntry
@@ -84,87 +89,140 @@ fun RouteDetailScreen(
                 onDismissRequest = onDismiss,
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ) {
-                Column(
+                Box(
                     modifier = Modifier
-                        .fillMaxHeight(0.8f)
-                        .padding(16.dp)
-                        .background(MaterialTheme.colorScheme.background),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFFE6F5E5),
+                                    Color(0xFFF0FAF0)
+                                )
+                            )
+                        )
+                        .padding(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White.copy(alpha = 0.9f)
+                        )
                     ) {
-                        IconButton(onClick = {
-                            isEditing = !isEditing
-                        }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Редактировать")
-                        }
-                        IconButton(onClick = {
-                            viewModel.deleteRoute(detail.id)
-                            onDismiss()
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Удалить маршрут")
-                        }
-                    }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight(0.8f)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { isEditing = !isEditing }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Редактировать",
+                                        tint = Color.Black
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        viewModel.deleteRoute(detail.id)
+                                        onDismiss()
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Удалить маршрут",
+                                        tint = Color.Black
+                                    )
+                                }
+                            }
 
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editedTitle,
-                            onValueChange = { editedTitle = it },
-                            label = { Text("Заголовок") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = editedDescription,
-                            onValueChange = { editedDescription = it },
-                            label = { Text("Описание") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Button(
-                            onClick = {
-                                viewModel.updateRoute(
-                                    detail.id,
-                                    JournalUpdateEntry(
-                                        title = editedTitle,
-                                        description = editedDescription,
-                                        distance = detail.distance,
-                                        route = detail.route
+                            if (isEditing) {
+                                OutlinedTextField(
+                                    value = editedTitle,
+                                    onValueChange = { editedTitle = it },
+                                    label = { Text("Заголовок", color = Color.Black) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color.Black
                                     )
                                 )
-                                isEditing = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Сохранить изменения")
+                                OutlinedTextField(
+                                    value = editedDescription,
+                                    onValueChange = { editedDescription = it },
+                                    label = { Text("Описание", color = Color.Black) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color.Black
+                                    )
+                                )
+                                Button(
+                                    onClick = {
+                                        viewModel.updateRoute(
+                                            detail.id,
+                                            JournalUpdateEntry(
+                                                title = editedTitle,
+                                                description = editedDescription,
+                                                distance = detail.distance,
+                                                route = detail.route
+                                            )
+                                        )
+                                        isEditing = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Text(text = "Сохранить изменения", color = Color.Black)
+                                }
+                            } else {
+                                Text(
+                                    text = detailForUI.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.Black
+                                )
+                                Text(
+                                    text = "Описание: ${detailForUI.description}",
+                                    color = Color.Black
+                                )
+                            }
+
+                            Text(
+                                text = "Дистанция: ${detailForUI.distance} км",
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "Создано: $formattedDate",
+                                color = Color.Black
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Button(
+                                onClick = {
+                                    val routePoints = detail.route.joinToString(";") { "${it["lat"]},${it["lon"]}" }
+                                    val encodedRoute = URLEncoder.encode(routePoints, "UTF-8")
+                                    navController.navigate("mapFragment?routePoints=$encodedRoute")
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text(text = "Открыть на карте", color = Color.Black)
+                            }
+
+                            Button(
+                                onClick = onDismiss,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text(text = "Закрыть", color = Color.Black)
+                            }
                         }
-                    } else {
-                        Text(text = detailForUI.title, style = MaterialTheme.typography.titleLarge)
-                        Text(text = "Описание: ${detailForUI.description}")
-                    }
-
-                    Text(text = "Дистанция: ${detailForUI.distance} км")
-                    Text(text = "Создано: $formattedDate")
-
-                    Spacer(modifier = Modifier.padding(8.dp))
-
-                    Button(
-                        onClick = {
-                            val routePoints = detail.route.joinToString(";") { "${it["lat"]},${it["lon"]}" }
-                            val encodedRoute = URLEncoder.encode(routePoints, "UTF-8")
-                            navController.navigate("mapFragment?routePoints=$encodedRoute")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Открыть на карте")
-                    }
-
-                    Button(
-                        onClick = onDismiss,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Закрыть")
                     }
                 }
             }
