@@ -42,9 +42,8 @@ A mobile application for Android featuring Yandex Map integration, custom route 
    Import the project into Android Studio.
 
 3. **Configure API Keys:**  
-   - **Set up your Yandex Map SDK API key**  
-   - **Configure the Google Geolocation API key. Adjust these keys in the appropriate configuration files.**
-
+   - **Set up your Yandex Map SDK API key**
+   
 4. **Build & Run:**  
    Build the project and run it on an Android device or emulator.
 
@@ -80,7 +79,7 @@ This project is licensed under the MIT License.
 
 #### Используемые технологии
 
-- **Разработка под Android:** Java/Kotlin  
+- **Разработка под Android:** Kotlin  
 - **Интеграция карт:** Yandex Map SDK  
 - **Геолокация:** Google Geolocation API  
 - **Взаимодействие с бекендом:** RESTful API для управления историей маршрутов  
@@ -90,7 +89,7 @@ This project is licensed under the MIT License.
 
 1. **Клонирование репозитория:**  
    ```bash
-   git clone https://github.com/your-repo
+   git clone https://github.com/ronik-v/GeoTravelJournal.git
 ### Открытие в Android Studio
 
 1. **Импортируйте проект в Android Studio.**  
@@ -98,16 +97,9 @@ This project is licensed under the MIT License.
 
 ### Настройка API ключей
 
-1. **Получите и настройте API ключ для Yandex Map SDK.**  
-   Зарегистрируйтесь на [Яндекс.Картах для разработчиков](https://developer.tech.yandex.ru/) и получите API ключ.  
-   Добавьте его в `local.properties` или другой конфигурационный файл, используемый в проекте.
+**Получите и настройте API ключ для Yandex Map SDK.**  
+   Зарегистрируйтесь на [Яндекс.Картах для разработчиков](https://developer.tech.yandex.ru/) и получите API ключ.
 
-2. **Настройте API ключ для Google Geolocation.**  
-   Перейдите в [Google Cloud Console](https://console.cloud.google.com/) и получите API ключ для геолокации.  
-   Добавьте ключ в нужные файлы конфигурации.
-
-3. **Внесите изменения в соответствующие конфигурационные файлы.**  
-   Убедитесь, что API ключи правильно указаны в `AndroidManifest.xml` или `gradle.properties`.
 
 ### Сборка и запуск
 
